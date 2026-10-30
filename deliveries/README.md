@@ -1,4 +1,4 @@
-# Franks24 Deliveries — separate service preview
+# Franks24 Deliveries — service preview and phase 2 backend
 
 `/deliveries/` is a separately styled delivery experience. Dispatch at `/` remains the recruitment platform. No recruiting code, profile roles or Firestore rules are changed. This directory may later be extracted to its own repository/domain; do not assume a new domain has been configured.
 
@@ -6,11 +6,11 @@ Implemented: responsive three-action landing page, Google session integration, q
 
 ## Current state and launch blockers
 
-The service is disabled in `config.js`. The shared `assets/config.js` currently exports null. The delivery API described below is a **contract only; no server, carrier connection, pricing engine or persistence is implemented in this PR**. This is a reviewable frontend foundation, not a completed delivery platform. GitHub Pages alone cannot implement the API. Preview rendering does not demonstrate live identity or delivery functionality.
+The service is disabled in `config.js`. The shared `assets/config.js` currently exports null. The customer API is implemented as source in `delivery-functions/`, with a transactional Firestore adapter, manual operator workflow and authenticated private proof access. It has not been deployed or connected to production. No automated carrier or rate engine is implemented. GitHub Pages alone cannot serve this backend. Preview rendering does not demonstrate live identity or delivery functionality. See [backend configuration and rollout](../delivery-functions/README.md).
 
-Before enabling: implement and deploy the authenticated backend with durable storage and operator controls; connect Firebase web settings and Google authorised domains; approve legal policies with the actual operator identity and contact channels; test account isolation, pricing, retries, expiry, tracking and proof with real staging accounts. Only then set `enabled` and `policiesApproved` true, replace the policy version and remove `noindex`. No Firecrawl API key is required by this service. No Vercel deployment is used.
+Before enabling: select and verify the production database edition; deploy and test the backend with durable storage and operator controls; connect Firebase web settings and Google authorised domains; approve legal policies with the actual operator identity and contact channels; test account isolation, pricing, retries, expiry, tracking and proof with real staging accounts. Only then set `enabled` and `policiesApproved` true, replace the policy version and remove `noindex`. No Firecrawl API key is required by this service. No Vercel deployment is used.
 
-## Backend contract — required, not implemented
+## Backend contract — implemented in source, deployment pending
 
 Serve the API at the same-origin `config.apiBase` (default `/api/deliveries`) through backend hosting or a reverse proxy. Do not point this frontend directly at an arbitrary cross-origin API. Every endpoint verifies Firebase ID tokens server-side, requires Google identity and derives ownership from the verified UID. Never trust a submitted owner or permit access based on a guessed reference alone. Apply rate limits and redact addresses/tokens from logs. Return `Cache-Control: private, no-store`.
 
@@ -19,7 +19,7 @@ Serve the API at the same-origin `config.apiBase` (default `/api/deliveries`) th
 | POST `/quotes` | pickupArea, deliveryArea, weightKg, lengthCm, widthCm, heightCm, service, acceptance | `{id,status:"pending"}` after durable creation |
 | GET `/quotes` | Authenticated customer only | `{items:[{id,status,totalMinor,currency,expiresAt}]}`; bound results to active/recent quotes |
 | POST `/bookings` | quoteId, pickupAddress, deliveryAddress, recipientName, recipientPhone, acceptance | `{id,reference,status:"requested"}`; `confirmed` only after actual confirmation |
-| GET `/shipments?limit=100` | Authenticated customer only | `{items:[shipment],nextCursor:null}`; optional nextCursor signals older records; UI currently shows first page only |
+| GET `/shipments?limit=100&cursor=ID` | Authenticated customer only | `{items:[shipment],nextCursor:null}`; Load older shipments follows the cursor; quote history also supports pagination |
 | GET `/shipments/{reference}` | Exact internal ID or assigned customer reference | shipment plus `events:[{status,at,description}]` |
 | GET `/shipments/{id}/proof` | Owner and delivered shipment with available proof | Authenticated PDF stream; Content-Type application/pdf; max 10 MB; never expose public proof URLs |
 
@@ -33,4 +33,4 @@ Acceptance is `{version,terms:true,privacy:true,ownership:true}`. The server mus
 
 ## Validation
 
-Run `node --test tests/deliveries.test.mjs` from the repository root. Tests cover validation, quote expiry, unsupported currency, same-origin token confinement, missing identity, session changes, API errors, idempotency headers and proof content-type rejection. They do not verify backend access controls or carrier execution: these remain mandatory staging tests when a backend exists. Manual mobile, keyboard and screen-reader review remains required.
+Run `node --test tests/deliveries.test.mjs delivery-functions/tests/service.test.mjs` from the repository root. Client and service tests cover validation, quote expiry, unsupported currency, same-origin token confinement, missing identity, session changes, ownership isolation, transaction/idempotency behaviour, operator transitions, policy evidence and proof access. The backend workflow additionally checks the real Firestore adapter against an emulator. Live Google identity, carrier execution, private-bucket IAM and manual mobile/keyboard/screen-reader review remain required before launch.
