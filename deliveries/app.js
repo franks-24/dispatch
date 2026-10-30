@@ -1,0 +1,100 @@
+import {firebaseConfig} from "../assets/config.js";
+import {deliveryConfig as config} from "./config.js";
+import {createDeliveryApi} from "./api.js";
+import {quoteInput, bookingInput, bookable, money, statuses} from "./model.js";
+const $ = id => document.getElementById(id);
+let user = null, auth, sdk, quotes = [], epoch = 0;
+const attempts = new Map();
+const ready = () => Boolean(user && config.enabled && config.policiesApproved);
+const api = createDeliveryApi({base:config.apiBase, origin:location.origin, getUser:()=>user});
+function message(text) {$("message").textContent = text;}
+function syncControls() {
+  for (const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","refresh"]) $(id).disabled = !ready();
+  $("login").hidden = Boolean(user); $("logout").hidden = !user;
+  $("identity").textContent = user ? `Signed in as ${user.email || "Google user"}.` : "Sign in to access your quotes and private shipment history.";
+  $("availability").textContent = !config.enabled || !config.policiesApproved ? "Preview — delivery requests are not open yet. No bookings or payments are accepted." : "Request a quote to begin. Collection is subject to booking confirmation and route availability.";
+}
+function clearPrivate() {
+  epoch++; quotes = []; attempts.clear();
+  for (const id of ["quote-form","booking-form","tracking-form"]) $(id).reset();
+  document.querySelectorAll('form button[type="submit"]').forEach(button=>button.disabled=false);
+  for (const id of ["history","tracking-result","quotes"]) $(id).replaceChildren();
+  $("history-note").textContent = "Sign in to see your shipments. No sample deliveries are shown.";
+  for (const id of ["terms","privacy","ownership"]) $(id).checked = false;
+  quoteOptions(); message("");
+}
+function acceptance() {
+  if (!ready()) throw new Error("Delivery requests are not available yet.");
+  if (!["terms","privacy","ownership"].every(id => $(id).checked)) throw new Error("Read and acknowledge each delivery policy before sending a request.");
+  return {version:config.policyVersion, terms:true, privacy:true, ownership:true};
+}
+function node(tag,text,className) {const item=document.createElement(tag);item.textContent=text;if(className)item.className=className;return item;}
+function quoteOptions() {
+  const select=$("quote-select"); const previous=select.value; select.replaceChildren();
+  const available=quotes.filter(q=>bookable(q));
+  const first=node("option",available.length ? "Select an issued quote" : "No current quotes"); first.value="";select.append(first);
+  for(const q of available){const option=node("option",`${q.id} · ${money(q)} · expires ${new Date(q.expiresAt).toLocaleString("en-ZA")}`);option.value=q.id;select.append(option);}
+  select.value=available.some(q=>q.id===previous)?previous:"";
+}
+function shipmentCard(shipment) {
+  const card=node("article","","shipment");
+  card.append(node("h3",shipment.reference || shipment.id || "Shipment"),node("span",statuses[shipment.status] || "Status unavailable","badge"));
+  if (shipment.pickupArea && shipment.deliveryArea) card.append(node("p",`${shipment.pickupArea} → ${shipment.deliveryArea}`));
+  if (shipment.updatedAt && Number.isFinite(Date.parse(shipment.updatedAt))) card.append(node("p",`Updated ${new Date(shipment.updatedAt).toLocaleString("en-ZA")}`));
+  if (shipment.status === "delivered" && shipment.proofAvailable === true) {
+    const button=node("button","Download proof of delivery ↓");button.type="button";
+    button.addEventListener("click",async()=>{const version=epoch;button.disabled=true;try{const blob=await api.proof(shipment.id);if(version!==epoch)return;const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="Franks24-proof-of-delivery.pdf";link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(error){if(version===epoch)message(error.message);}finally{if(version===epoch)button.disabled=false;}});
+    card.append(button);
+  } else card.append(node("p","Proof of delivery has not been recorded."));
+  return card;
+}
+async function refresh() {
+  if(!ready())return;
+  const version=epoch;
+  $("refresh").disabled=true;$("history-note").textContent="Loading your workspace…";
+  try {
+    const [quotePage, shipmentPage]=await Promise.all([api.quotes(),api.shipments()]);
+    if(version!==epoch)return;
+    if(!Array.isArray(quotePage.items)||!Array.isArray(shipmentPage.items))throw new Error("The delivery service returned an invalid workspace.");
+    quotes=quotePage.items;quoteOptions();
+    $("quotes").replaceChildren();
+    for(const q of quotes){const row=node("article","","shipment");row.append(node("h4",q.id),node("p",`${money(q)} · ${q.status === "quoted" ? (bookable(q) ? "Ready to book" : "Quote expired or unavailable") : "Awaiting review"}`));$("quotes").append(row);}
+    if(!quotes.length)$("quotes").append(node("p","No quote requests yet."));
+    $("history").replaceChildren(...shipmentPage.items.map(shipmentCard));
+    $("history-note").textContent=shipmentPage.items.length ? (shipmentPage.nextCursor ? "Showing your latest 100 shipments. Older records require backend pagination support in this interface." : "Your recorded shipments are shown below.") : "No shipments yet. Request a quote to get started.";
+  } catch(error){if(version===epoch){$("history").replaceChildren();$("quotes").replaceChildren();quotes=[];quoteOptions();$("history-note").textContent="Unable to load your workspace. Use Refresh to try again.";message(error.message);}}
+  finally{if(version===epoch)syncControls();}
+}
+function idempotency(name, body) {const fingerprint=JSON.stringify(body);const prior=attempts.get(name);if(prior?.fingerprint===fingerprint)return prior.key;const key=crypto.randomUUID();attempts.set(name,{fingerprint,key});return key;}
+function submit(id, build, send, after) {
+  $(id).addEventListener("submit",async event=>{
+    event.preventDefault();if(!ready())return;
+    const form=event.currentTarget;if(!form.reportValidity())return;
+    const button=form.querySelector('button[type="submit"]');const version=epoch;button.disabled=true;
+    try {const consent=acceptance();const body=build(Object.fromEntries(new FormData(form)));const result=await send(body,consent,idempotency(id,{...body,acceptance:consent}));if(version!==epoch)return;attempts.delete(id);after(result);await refresh();}
+    catch(error){if(version===epoch)message(error.message);}
+    finally{if(version===epoch)button.disabled=false;}
+  });
+}
+submit("quote-form",quoteInput,(body,consent,key)=>api.quote(body,consent,key),result=>message(`Quote request received${result.id ? `: ${result.id}` : ""}. A price will appear after review.`));
+submit("booking-form",data=>bookingInput(data,quotes.find(q=>q.id===data.quoteId)),(body,consent,key)=>api.book(body,consent,key),result=>{$("booking-form").reset();message(result.status==="confirmed" ? `Booking confirmed: ${result.reference || result.id}.` : `Booking request received${result.id ? `: ${result.id}` : ""}. Await confirmation before handing over your parcel.`);});
+$("tracking-form").addEventListener("submit",async event=>{
+  event.preventDefault();if(!ready())return;const version=epoch;const form=event.currentTarget;const button=form.querySelector("button");button.disabled=true;$("tracking-result").replaceChildren();
+  try{const shipment=await api.track(String(new FormData(form).get("reference")).trim());if(version!==epoch)return;const card=shipmentCard(shipment);if(Array.isArray(shipment.events)){const timeline=node("ol","","timeline");for(const event of shipment.events){const timestamp=Number.isFinite(Date.parse(event.at))?new Date(event.at).toLocaleString("en-ZA"):"Time unavailable";timeline.append(node("li",`${statuses[event.status] || "Status update"} · ${timestamp}${event.description ? ` — ${event.description}` : ""}`));}card.append(timeline);}$("tracking-result").append(card);}
+  catch(error){if(version===epoch)message(error.message);}finally{if(version===epoch)button.disabled=false;}
+});
+$("refresh").addEventListener("click",refresh);
+$("login").addEventListener("click",async()=>{if(!auth||!sdk)return;$("login").disabled=true;try{await sdk.signInWithPopup(auth,new sdk.GoogleAuthProvider());}catch(error){message(error.code==="auth/popup-closed-by-user"?"Sign-in cancelled.":"Google sign-in could not complete. Please try again.");}finally{$("login").disabled=false;}});
+$("logout").addEventListener("click",async()=>{try{await sdk.signOut(auth);}catch{message("Sign-out could not complete. Please try again.");}});
+async function initialize() {
+  syncControls();
+  if(!firebaseConfig?.apiKey||!firebaseConfig?.authDomain||!firebaseConfig?.projectId||!firebaseConfig?.appId){message("Google sign-in is not configured yet. Delivery requests remain closed.");return;}
+  try{
+    const [app,authSdk]=await Promise.all([import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")]);
+    sdk=authSdk;auth=sdk.getAuth(app.initializeApp(firebaseConfig,"franks24-deliveries"));
+    await sdk.setPersistence(auth,sdk.browserSessionPersistence);
+    sdk.onAuthStateChanged(auth,current=>{clearPrivate();user=current;syncControls();if(ready())refresh();});
+    $("login").disabled=false;
+  }catch{message("Google sign-in is temporarily unavailable. Please try again later.");}
+}
+initialize();
