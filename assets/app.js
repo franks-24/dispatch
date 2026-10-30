@@ -1,13 +1,26 @@
 import {firebaseConfig} from "./config.js";
+import {CURRENT_POLICY_VERSION, acceptancePath} from "./consent-policy.js";
 
 const $ = (id) => document.getElementById(id);
 const views = ["landing","onboarding","dashboard"];
-const state = {user:null, profile:null, role:"worker", approvedEmployer:false, auth:null, db:null, api:null};
+const state = {user:null, profile:null, role:"worker", hasAgreement:false, approvedEmployer:false, auth:null, db:null, api:null};
 const GOOGLE_MARKUP = '<span class="google-g" aria-hidden="true"><svg viewBox="0 0 48 48" width="22" height="22"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.76 7.18l7.73 6C44.42 38.03 46.98 31.88 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.41 14.41 0 0 1 9.75 24c0-1.6.27-3.15.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.92 7.51 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.92-2.13 15.89-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>';
 let toastTimer;
 function toast(message,error=false){const el=$("toast");el.textContent=message;el.classList.toggle("error",error);el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,6500)}
 function showView(name){for(const v of views)$("view-"+v).hidden=v!==name;document.querySelectorAll(".nav-public").forEach(el=>el.hidden=name!=="landing");document.querySelector(".nav-login").hidden=name!=="landing";$("nav-signout").hidden=name==="landing";window.scrollTo({top:0,behavior:"instant"})}
 function setText(id,value){$(id).textContent=value??""}
+function showOnboarding(renewal=false){
+ const form=$("onboarding-form");form.reset();$("consent-error").hidden=true;
+ $("profile-fields").hidden=renewal;
+ ["profile-name","profile-location","profile-phone","profile-skills"].forEach(id=>{$(id).disabled=renewal});
+ $("onboard-stage").textContent=renewal?"Review updated agreements":"Create your workspace";
+ setText("onboarding-heading",renewal?"Review your agreements":"Make Dispatch yours.");
+ setText("onboarding-description",renewal?"Your profile is saved. Review and accept the current policies to re-enter your workspace.":"A few details, clear agreements, and your workspace is ready.");
+ $("onboard-submit").textContent=renewal?"Accept & enter workspace ↗":"Agree & create my workspace ↗";
+ if(!renewal){$("profile-name").value=state.user?.displayName||""}
+ showView("onboarding");
+}
+function allAcknowledged(){return ["consent-terms","consent-privacy","consent-ownership"].every(id=>$(id).checked)}
 function isConfigured(){return Boolean(firebaseConfig?.apiKey&&firebaseConfig?.authDomain&&firebaseConfig?.projectId&&firebaseConfig?.appId)}
 function errorMessage(error){const code=error?.code||"";if(code==="auth/popup-closed-by-user"||code==="auth/cancelled-popup-request")return "";if(code==="auth/unauthorized-domain")return "This website must be added to Firebase Authentication's authorized domains.";if(code==="auth/operation-not-allowed")return "Google sign-in must be enabled in Firebase Authentication.";if(code==="permission-denied")return "Access denied. Check the Firestore security rules.";return "We couldn't complete that action. Please try again."}
 async function initializeFirebase(){
@@ -20,7 +33,17 @@ async function initializeFirebase(){
   ]);
   const app=initializeApp(firebaseConfig);state.auth=getAuth(app);state.db=getFirestore(app);
   state.api={GoogleAuthProvider,signInWithPopup,signInWithRedirect,onAuthStateChanged,signOut,doc,getDoc,setDoc,addDoc,collection,query,where,getDocs,serverTimestamp};
-  onAuthStateChanged(state.auth,async user=>{try{state.user=user;if(!user){state.profile=null;state.approvedEmployer=false;showView("landing");return}setText("onboard-email",user.email||"Google account");const profileRef=doc(state.db,"users",user.uid);const snapshot=await getDoc(profileRef);if(snapshot.exists()){state.profile=snapshot.data();showDashboard()}else{state.profile=null;setText("profile-name",user.displayName||"");$("profile-name").value=user.displayName||"";showView("onboarding")}}catch(error){toast(errorMessage(error),true)}});
+  onAuthStateChanged(state.auth,async user=>{try{state.user=user;if(!user){state.profile=null;state.hasAgreement=false;state.approvedEmployer=false;showView("landing");return}
+   setText("onboard-email",user.email||"Google account");
+   const uid=user.uid;
+   const profileRef=doc(state.db,"users",uid);
+   const consentRef=doc(state.db,...acceptancePath(uid));
+   const [snapshot,consentSnapshot]=await Promise.all([getDoc(profileRef),getDoc(consentRef)]);
+   if(state.user?.uid!==uid)return;
+   state.profile=snapshot.exists()?snapshot.data():null;
+   state.hasAgreement=consentSnapshot.exists();
+   if(!state.hasAgreement||!state.profile)showOnboarding(Boolean(state.profile));
+   else showDashboard();}catch(error){toast(errorMessage(error),true)}});
  }catch(error){console.error("Firebase initialization failed",error);toast("Google sign-in is temporarily unavailable.",true)}
 }
 async function login(){
@@ -32,19 +55,41 @@ async function login(){
 async function logout(){if(!state.auth)return;try{await state.api.signOut(state.auth)}catch(e){toast(errorMessage(e),true)}}
 document.querySelectorAll("[data-login]").forEach(button=>button.addEventListener("click",login));
 $("nav-signout").addEventListener("click",logout);
+$("onboarding-signout").addEventListener("click",logout);
+document.querySelectorAll(".agreement-option input").forEach(input=>input.addEventListener("change",()=>{$("consent-error").hidden=true}));
 document.querySelectorAll("[data-role]").forEach(button=>button.addEventListener("click",()=>{state.role=button.dataset.role;document.querySelectorAll("[data-role]").forEach(b=>{const selected=b===button;b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected))});$("skills-label").hidden=state.role==="employer"}));
 $("onboarding-form").addEventListener("submit",async event=>{
- event.preventDefault();if(!state.user||!state.db)return;
- const form=event.currentTarget;if(!form.reportValidity())return;const btn=$("onboard-submit");btn.disabled=true;
+ event.preventDefault();if(!state.user||!state.db||!state.api)return;
+ if(!allAcknowledged()){$("consent-error").hidden=false;$("consent-terms").focus();return}
+ const form=event.currentTarget;if(!form.reportValidity())return;
+ const btn=$("onboard-submit");btn.disabled=true;const uid=state.user.uid;
  try{
-  const profile={displayName:$("profile-name").value.trim(),email:state.user.email||"",location:$("profile-location").value.trim(),phone:$("profile-phone").value.trim(),skills:state.role==="worker"?$("profile-skills").value.trim():"",role:state.role,photoURL:state.user.photoURL||"",createdAt:state.api.serverTimestamp(),updatedAt:state.api.serverTimestamp()};
-  if(!profile.displayName||!profile.location){toast("Please complete your name and location.",true);return}
-  await state.api.setDoc(state.api.doc(state.db,"users",state.user.uid),profile);
-  state.profile=profile;showDashboard();toast("Your workspace is ready.")
+  // This document is immutable: Security Rules enforce the Google UID, the pinned
+  // policy release, each affirmative acknowledgment, and a server-side timestamp.
+  const ref=state.api.doc(state.db,...acceptancePath(uid));
+  const existing=await state.api.getDoc(ref);
+  if(!existing.exists()){
+   await state.api.setDoc(ref,{uid,email:state.user.email||"",version:CURRENT_POLICY_VERSION,
+    termsAccepted:true,privacyAcknowledged:true,ownershipAcknowledged:true,
+    acceptedAt:state.api.serverTimestamp()});
+  }
+  if(state.user?.uid!==uid)return;
+  state.hasAgreement=true;
+  if(!state.profile){
+   const profile={displayName:$("profile-name").value.trim(),email:state.user.email||"",
+     location:$("profile-location").value.trim(),phone:$("profile-phone").value.trim(),
+     skills:state.role==="worker"?$("profile-skills").value.trim():"",
+     role:state.role,photoURL:state.user.photoURL||"",
+     createdAt:state.api.serverTimestamp(),updatedAt:state.api.serverTimestamp()};
+   if(!profile.displayName||!profile.location){toast("Please complete your name and location.",true);return}
+   await state.api.setDoc(state.api.doc(state.db,"users",uid),profile);
+   state.profile=profile;
+  }
+  showDashboard();toast("Your workspace is ready.");
  }catch(error){toast(errorMessage(error),true)}finally{btn.disabled=false}
 });
 function showDashboard(){
- const profile=state.profile; if(!profile)return;
+ const profile=state.profile; if(!profile||!state.hasAgreement)return;
  const employer=profile.role==="employer";setText("dashboard-heading","Welcome, "+(profile.displayName||"there").split(" ")[0]+".");
  setText("user-initial",(profile.displayName||"D").charAt(0).toUpperCase());setText("user-name",profile.displayName);setText("user-role",employer?"Hiring team":"Job seeker");
  setText("dashboard-intro",employer?"Manage your openings and connect with people.":"Find opportunities and take your next step.");
