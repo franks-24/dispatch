@@ -15,6 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
   <link rel="stylesheet" href="./assets/onboarding.css">
+  <link rel="stylesheet" href="./assets/identity.css">
   <script type="module" src="./assets/app.js"></script>
 </head>
 <body>
@@ -33,6 +34,7 @@
     </header>
 
     <main>
+      <p id="identity-notice" class="identity-notice" role="status" aria-live="polite"></p>
       <section id="view-landing" class="view">
         <div class="landing-glow" aria-hidden="true"></div>
         <section class="hero page-grid" aria-labelledby="hero-heading">
@@ -79,6 +81,8 @@
         <section id="for-teams" class="team-section"><div class="team-orb" aria-hidden="true"></div><div class="team-kicker">FOR THE PEOPLE WHO MAKE THINGS HAPPEN</div><h2>Better connections.<br><span>Better work.</span></h2><div class="team-bottom"><p>Whether you're looking for your next role or bringing a team together, Dispatch gives you a focused place to start.</p><button type="button" class="button button-light" data-login>Get started with Google ↗</button></div></section>
       </section>
 
+      <section id="view-loading" class="view private-view" hidden aria-labelledby="identity-loading-title"><div class="private-card identity-card" role="status" aria-live="polite"><span class="identity-spinner" aria-hidden="true"></span><h1 id="identity-loading-title">Recognising your account</h1><p>Checking your profile and agreements before opening your workspace.</p></div></section>
+      <section id="view-auth-error" class="view private-view" hidden aria-labelledby="identity-error-title"><div class="private-card identity-card"><h1 id="identity-error-title">Your workspace could not open</h1><p id="auth-error-detail"></p><div class="form-actions"><button id="retry-identity" type="button" class="button button-primary">Retry securely</button><button id="error-signout" type="button" class="button button-outline-dark">Sign out</button></div></div></section>
       <section id="view-onboarding" class="view private-view onboarding-experience" hidden aria-labelledby="onboarding-heading">
         <div class="onboard-ambient" aria-hidden="true"></div>
         <div class="private-top onboard-top"><span class="eyebrow"><span class="eyebrow-dot"></span> WELCOME TO DISPATCH / ACCOUNT ACTIVATION</span><span id="onboard-email" class="signed-in-pill"></span></div>
