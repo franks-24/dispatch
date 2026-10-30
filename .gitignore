@@ -1,0 +1,6 @@
+node_modules/
+.identity-tests/
+test-results/
+playwright-report/
+dist/
+*.log

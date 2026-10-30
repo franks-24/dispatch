@@ -1,7 +1,8 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
-import {mkdtempSync, readFileSync, rmSync} from "node:fs";
+import {mkdtempSync, readFileSync, rmSync, mkdirSync, writeFileSync} from "node:fs";
+import {fileURLToPath} from "node:url";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 
@@ -14,12 +15,14 @@ const config = {
   appId: "1:1068135038943:web:example",
   measurementId: "G-TEST"
 };
-const script = new URL("../tools/write-firebase-config.mjs", import.meta.url).pathname;
-function run(input) {
+const script = fileURLToPath(new URL("../tools/write-firebase-config.mjs", import.meta.url));
+function run(input, publicFileInput) {
   const dir = mkdtempSync(join(tmpdir(), "dispatch-firebase-config-"));
   const output = join(dir, "config.js");
   try {
+    if(publicFileInput!==undefined){mkdirSync(join(dir,"assets"));writeFileSync(join(dir,"assets","firebase-config.public.json"),JSON.stringify(publicFileInput));}
     execFileSync(process.execPath, [script], {
+      cwd: dir,
       env: {
         ...process.env,
         FIREBASE_WEB_CONFIG_JSON: input === undefined ? "" : JSON.stringify(input),
@@ -46,3 +49,10 @@ test("rejects wrong Firebase project and extra credential fields", () => {
   assert.throws(() => run({...config,projectId:"other-project"}));
   assert.throws(() => run({...config,private_key:"should-never-be-emitted"}));
 });
+
+test("a checked-in public configuration file uses the same project and credential validation",()=>{
+ assert.match(run(undefined,config),/export const firebaseConfig =/);
+ assert.throws(()=>run(undefined,{...config,projectId:"wrong"}));
+ assert.throws(()=>run(undefined,{...config,client_secret:"must-not-be-published"}));
+});
+test("an invalid configured variable is not hidden by a valid fallback file",()=>{assert.throws(()=>run({...config,projectId:"wrong"},config))});
