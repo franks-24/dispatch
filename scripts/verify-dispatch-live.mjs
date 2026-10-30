@@ -17,7 +17,7 @@ for(const path of [...new Set([...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]
  const result=await fetch(origin+"/"+path,{signal:AbortSignal.timeout(15000)});assert.equal(result.status,200,path+" unavailable");report.assets.push({path,status:result.status});
 }
 function parseConfig(source){
- const value=source.match(/export const firebaseConfig\\s*=\\s*(\\{[\\s\\S]*?\\});?\\s*$/);
+ const value=source.match(/export const firebaseConfig\s*=\s*(\{[\s\S]*?\});?\s*$/);
  if(!value)return null;try{return JSON.parse(value[1])}catch{return null}
 }
 async function readLiveConfig(){return parseConfig(await (await fetch(origin+"/assets/config.js?verify="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(15000)})).text())}
@@ -44,7 +44,7 @@ if(authResponse.ok){
  report.authorizedDomains=project.authorizedDomains||[];
  report.customDomainAuthorized=report.authorizedDomains.includes(host);
 }else report.customDomainAuthorized=false;
-await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\\n");
+await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
 console.log(JSON.stringify(report,null,2));
 if(process.argv.includes("--require-config"))assert.ok(report.firebaseConfigured,"Firebase web settings are still missing; live Google SSO is not activated");
 if(process.argv.includes("--require-auth"))assert.ok(report.firebaseConfigured&&report.customDomainAuthorized,"The live Firebase configuration and custom auth domain must both be enabled before Google SSO acceptance");
