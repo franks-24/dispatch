@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 580" role="img" aria-labelledby="title desc">
+<title id="title">Dispatch interface illustration</title>
+<desc id="desc">Illustrated responsive Dispatch public landing page and the Google-only entry point. Concept illustration only, not a live screenshot.</desc>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#08121e"/><stop offset="1" stop-color="#183039"/></linearGradient></defs>
+<rect width="1100" height="580" rx="24" fill="#e7eeed"/>
+<rect x="36" y="40" width="1028" height="505" rx="19" fill="#08121e"/>
+<rect x="36" y="40" width="1028" height="48" rx="19" fill="#132735"/>
+<g fill="#aec5c9"><circle cx="58" cy="64" r="5"/><circle cx="77" cy="64" r="5"/><circle cx="96" cy="64" r="5"/></g>
+<text x="550" y="70" text-anchor="middle" fill="#bed4d0" font-size="15" font-family="Arial,sans-serif">dispatch.franks24.com</text>
+<rect x="72" y="117" width="32" height="32" rx="9" fill="#b8f477"/><text x="88" y="139" text-anchor="middle" fill="#08121e" font-size="22" font-weight="800" font-family="Arial,sans-serif">D</text>
+<text x="114" y="142" fill="white" font-family="Arial,sans-serif" font-size="27" font-weight="800">dispatch<tspan fill="#b8f477">.</tspan></text>
+<rect x="876" y="119" width="145" height="35" rx="17" fill="none" stroke="#a8c5c0"/><text x="949" y="142" text-anchor="middle" fill="#d6e8e3" font-family="Arial,sans-serif" font-size="16">Sign in ↗</text>
+<text x="79" y="236" fill="#b8f477" font-size="15" letter-spacing="2" font-family="Arial,sans-serif">WORK MOVES HERE</text>
+<text x="75" y="310" fill="white" font-size="66" font-weight="800" font-family="Arial,sans-serif">Work moves</text>
+<text x="75" y="376" fill="none" stroke="#b8f477" stroke-width="1.6" font-size="69" font-weight="800" font-family="Arial,sans-serif">here.</text>
+<text x="80" y="421" fill="#b7cbd0" font-family="Arial,sans-serif" font-size="18">Opportunity for people. Clarity for teams.</text>
+<rect x="80" y="450" width="253" height="54" rx="27" fill="#b8f477"/>
+<text x="206" y="483" text-anchor="middle" fill="#08121e" font-size="17" font-weight="700" font-family="Arial,sans-serif">Continue with Google ↗</text>
+<rect x="631" y="196" width="365" height="284" rx="17" fill="#18313f" stroke="#4b7a72"/>
+<text x="652" y="229" fill="#bed7d2" font-family="Arial,sans-serif" font-size="14">YOUR WORKSPACE</text>
+<text x="651" y="278" fill="white" font-family="Arial,sans-serif" font-size="27" font-weight="700">Make your next move.</text>
+<rect x="651" y="304" width="151" height="142" rx="13" fill="#b8f477"/>
+<text x="665" y="334" fill="#253f34" font-size="13" font-family="Arial,sans-serif">01 / DISCOVER</text>
+<text x="665" y="381" fill="#0b1722" font-size="24" font-weight="800" font-family="Arial,sans-serif">Find work</text>
+<text x="665" y="415" fill="#0b1722" font-size="34" font-family="Arial,sans-serif">↗</text>
+<rect x="813" y="304" width="161" height="142" rx="13" fill="#293f49"/>
+<text x="826" y="334" fill="#b8f477" font-size="13" font-family="Arial,sans-serif">02 / CONNECT</text>
+<text x="826" y="381" fill="white" font-size="22" font-weight="800" font-family="Arial,sans-serif">Hire people</text>
+<text x="826" y="415" fill="#b8f477" font-size="32" font-family="Arial,sans-serif">↗</text>
+<text x="550" y="564" text-anchor="middle" fill="#3a545c" font-family="Arial,sans-serif" font-size="13">Concept illustration — not a screenshot of live user or job data</text>
+</svg>

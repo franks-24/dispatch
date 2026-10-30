@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 320" role="img" aria-labelledby="title desc">
+<title id="title">Dispatch Google SSO and role onboarding flow</title>
+<desc id="desc">Public landing to Google single sign-on, then returning users enter their workspace while new users choose worker or employer roles.</desc>
+<defs><linearGradient id="back"><stop stop-color="#0c1925"/><stop offset="1" stop-color="#142b35"/></linearGradient></defs>
+<rect width="1160" height="320" rx="20" fill="#0a1722"/>
+<g font-family="Arial,sans-serif" text-anchor="middle">
+<rect x="24" y="96" width="224" height="127" rx="18" fill="#193141" stroke="#385965"/><text x="136" y="126" fill="#b8f477" font-size="13">PUBLIC</text><text x="136" y="166" fill="white" font-size="25" font-weight="700">Landing page</text><text x="136" y="192" fill="#beced7" font-size="14">Sign in or sign up</text>
+<rect x="325" y="96" width="224" height="127" rx="18" fill="#193141" stroke="#83b884"/><text x="437" y="126" fill="#b8f477" font-size="13">IDENTITY</text><text x="437" y="165" fill="white" font-size="24" font-weight="700">Google SSO</text><text x="437" y="192" fill="#beced7" font-size="14">Firebase Authentication</text>
+<rect x="626" y="24" width="224" height="116" rx="18" fill="#193141" stroke="#385965"/><text x="738" y="53" fill="#b8f477" font-size="13">NEW USER</text><text x="738" y="91" fill="white" font-size="23" font-weight="700">Onboarding</text><text x="738" y="116" fill="#beced7" font-size="14">Choose a role</text>
+<rect x="626" y="177" width="224" height="116" rx="18" fill="#193141" stroke="#385965"/><text x="738" y="206" fill="#b8f477" font-size="13">RETURNING USER</text><text x="738" y="244" fill="white" font-size="23" font-weight="700">Recognised</text><text x="738" y="269" fill="#beced7" font-size="14">Restore session</text>
+<rect x="930" y="96" width="206" height="127" rx="18" fill="#b8f477"/><text x="1033" y="126" fill="#243b34" font-size="13">AUTHENTICATED</text><text x="1033" y="163" fill="#0b1722" font-size="22" font-weight="700">Workspace</text><text x="1033" y="189" fill="#243b34" font-size="14">Worker / employer</text>
+</g>
+<g fill="none" stroke="#b8f477" stroke-width="3" stroke-dasharray="7 8" stroke-linecap="round">
+<path d="M248 159H325"/><path d="M549 159H582V82H626"/><path d="M549 159H582V235H626"/><path d="M850 82H891V159H930"/><path d="M850 235H891V159H930"/>
+</g><g fill="#b8f477"><path d="m316 153 9 6-9 6ZM617 76l9 6-9 6ZM617 229l9 6-9 6ZM921 153l9 6-9 6Z"/></g>
+<text x="580" y="309" text-anchor="middle" fill="#94aebb" font-family="Arial,sans-serif" font-size="13">Authentication is provided by Google; access to operational records must be enforced by Firestore rules / future server APIs</text>
+</svg>
