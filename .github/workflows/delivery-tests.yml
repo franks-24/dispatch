@@ -1,0 +1,18 @@
+name: Delivery service client tests
+on:
+  pull_request:
+    paths: ['deliveries/**', 'tests/deliveries.test.mjs', '.github/workflows/delivery-tests.yml']
+  push:
+    branches: [main]
+    paths: ['deliveries/**', 'tests/deliveries.test.mjs', '.github/workflows/delivery-tests.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/deliveries.test.mjs

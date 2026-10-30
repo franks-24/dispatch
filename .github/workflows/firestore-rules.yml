@@ -1,0 +1,25 @@
+name: Firestore security rules
+on:
+  pull_request:
+    paths: ['firestore.rules', 'firebase.json', 'package.json', 'tests/**', '.github/workflows/firestore-rules.yml']
+  push:
+    branches: [main]
+    paths: ['firestore.rules', 'firebase.json', 'package.json', 'tests/**', '.github/workflows/firestore-rules.yml']
+permissions:
+  contents: read
+jobs:
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test tooling
+        run: npm install --no-audit --no-fund
+      - name: Test Firestore access controls
+        run: npm run test:rules

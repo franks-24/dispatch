@@ -1,0 +1,10 @@
+{
+  "functions": [{"source":"delivery-functions","codebase":"franks24-deliveries","ignore":["node_modules","tests",".env.example","*.json.tmp"]}],
+  "hosting": {
+    "target":"deliveries-staging",
+    "public":".",
+    "ignore":["firebase*.json","firestore.rules","delivery-functions/**","tests/**","docs/**","outputs/**","work/**","**/node_modules/**","**/.*","**/*.md","package*.json"],
+    "headers":[{"source":"/api/deliveries/**","headers":[{"key":"Cache-Control","value":"private, no-store"}]}],
+    "rewrites":[{"source":"/api/deliveries/**","function":{"functionId":"deliveriesApi","region":"europe-west1"}}]
+  }
+}

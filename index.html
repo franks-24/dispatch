@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
+  <link rel="stylesheet" href="./assets/onboarding.css">
   <script type="module" src="./assets/app.js"></script>
 </head>
 <body>
@@ -78,16 +79,55 @@
         <section id="for-teams" class="team-section"><div class="team-orb" aria-hidden="true"></div><div class="team-kicker">FOR THE PEOPLE WHO MAKE THINGS HAPPEN</div><h2>Better connections.<br><span>Better work.</span></h2><div class="team-bottom"><p>Whether you're looking for your next role or bringing a team together, Dispatch gives you a focused place to start.</p><button type="button" class="button button-light" data-login>Get started with Google ↗</button></div></section>
       </section>
 
-      <section id="view-onboarding" class="view private-view" hidden aria-labelledby="onboarding-heading">
-        <div class="private-top"><span class="eyebrow">FIRST THINGS FIRST</span><span id="onboard-email" class="signed-in-pill"></span></div>
-        <div class="private-card onboard-card"><span class="step-number">ACCOUNT SETUP / 01</span><h1 id="onboarding-heading">Make Dispatch <em>yours.</em></h1><p>Just a few details, then we'll take you to your workspace.</p>
-          <form id="onboarding-form" novalidate>
-            <label class="form-heading">What brings you here?</label>
-            <div class="role-options" role="group" aria-label="Account type"><button class="role-card selected" type="button" data-role="worker" aria-pressed="true"><span class="role-glyph">↗</span><strong>I'm looking for work</strong><span>Discover and apply for opportunities</span></button><button class="role-card" type="button" data-role="employer" aria-pressed="false"><span class="role-glyph">⊞</span><strong>I'm hiring</strong><span>Post opportunities and find people</span></button></div>
-            <div class="form-grid"><label>Full name <input id="profile-name" autocomplete="name" maxlength="100" required placeholder="Your full name"></label><label>City or area <input id="profile-location" autocomplete="address-level2" maxlength="120" required placeholder="e.g. Johannesburg"></label><label>Phone (optional) <input id="profile-phone" autocomplete="tel" type="tel" maxlength="30" placeholder="+27"></label><label id="skills-label">Skills (optional) <input id="profile-skills" maxlength="250" placeholder="e.g. Events, logistics, admin"></label></div>
-            <p class="form-note">Your name, role and location help us match the right workspace to your account. You can review your details later.</p>
-            <button type="submit" class="button button-primary button-large form-submit" id="onboard-submit">Create my workspace <span aria-hidden="true">↗</span></button>
-          </form>
+      <section id="view-onboarding" class="view private-view onboarding-experience" hidden aria-labelledby="onboarding-heading">
+        <div class="onboard-ambient" aria-hidden="true"></div>
+        <div class="private-top onboard-top"><span class="eyebrow"><span class="eyebrow-dot"></span> WELCOME TO DISPATCH / ACCOUNT ACTIVATION</span><span id="onboard-email" class="signed-in-pill"></span></div>
+        <div class="onboard-layout">
+          <aside class="onboard-story" aria-label="Your next steps">
+            <div class="onboard-story-kicker"><span class="onboard-live-dot"></span> YOUR NEXT MOVE STARTS HERE</div>
+            <h2>Big things start with <em>one step.</em></h2>
+            <p>Make your profile, choose your direction and own your next opportunity. All with one secure Google account.</p>
+            <div class="onboard-journey" aria-label="Account activation steps">
+              <div class="journey-step complete"><span class="journey-icon">✓</span><div><strong>Identity verified</strong><small>Google sign-in completed</small></div></div>
+              <div class="journey-step current"><span class="journey-icon">02</span><div><strong id="onboard-stage">Create your workspace</strong><small>Profile and agreements</small></div></div>
+              <div class="journey-step"><span class="journey-icon">03</span><div><strong>Get moving</strong><small>Explore your workspace</small></div></div>
+            </div>
+            <div class="onboard-trust"><span aria-hidden="true">✳</span><div><strong>Your information. Your choices.</strong><small>Clear terms, transparent processing, and no hidden marketing opt-in.</small></div></div>
+          </aside>
+          <div class="private-card onboard-card">
+            <div class="onboard-card-head"><span class="step-number">GET STARTED / 02</span><span class="onboard-step-pill">SECURE ONBOARDING</span></div>
+            <h1 id="onboarding-heading">Make Dispatch <em>yours.</em></h1>
+            <p id="onboarding-description" class="onboard-intro">A few details, clear agreements, and your workspace is ready.</p>
+            <form id="onboarding-form" novalidate>
+              <div id="profile-fields">
+                <label class="form-heading" id="role-heading">What brings you here?</label>
+                <div class="role-options" role="group" aria-labelledby="role-heading">
+                  <button class="role-card selected" type="button" data-role="worker" aria-pressed="true"><span class="role-glyph">↗</span><strong>I'm looking for work</strong><span>Discover and apply for opportunities</span></button>
+                  <button class="role-card" type="button" data-role="employer" aria-pressed="false"><span class="role-glyph">⊞</span><strong>I'm hiring</strong><span>Apply for verification before posting jobs</span></button>
+                </div>
+                <div class="form-grid">
+                  <label>Full name <input id="profile-name" autocomplete="name" maxlength="100" required placeholder="Your full name"></label>
+                  <label>City or area <input id="profile-location" autocomplete="address-level2" maxlength="120" required placeholder="e.g. Johannesburg"></label>
+                  <label>Phone (optional) <input id="profile-phone" autocomplete="tel" type="tel" maxlength="30" placeholder="+27"></label>
+                  <label id="skills-label">Skills (optional) <input id="profile-skills" maxlength="250" placeholder="e.g. Events, logistics, admin"></label>
+                </div>
+                <p class="form-note">Your name, selected role and city help set up your workspace. Employers must be independently verified before posting jobs.</p>
+              </div>
+              <section class="agreement-section" aria-labelledby="agreement-heading">
+                <div class="agreement-heading-row"><div><span class="step-number">YOUR RIGHTS MATTER</span><h2 id="agreement-heading">Before we begin, let's be clear.</h2></div><span class="agreement-counter">03 REQUIRED</span></div>
+                <p class="agreement-lead">Review each document. All three acknowledgments are required to use Dispatch; none grants us ownership of your content or permission to send marketing.</p>
+                <div class="agreement-list">
+                  <label class="agreement-option"><input type="checkbox" id="consent-terms" required><span><strong>I accept the Platform Terms of Use.</strong><small>Rules for accounts, listings, acceptable use and account suspension. <a href="./legal/terms.html" target="_blank" rel="noopener noreferrer">Read Terms of Use ↗</a></small></span></label>
+                  <label class="agreement-option"><input type="checkbox" id="consent-privacy" required><span><strong>I acknowledge the Privacy Notice.</strong><small>How personal information is collected, shared, kept and protected. <a href="./legal/privacy.html" target="_blank" rel="noopener noreferrer">Read Privacy Notice ↗</a></small></span></label>
+                  <label class="agreement-option"><input type="checkbox" id="consent-ownership" required><span><strong>I acknowledge the Data Ownership &amp; Usage Policy.</strong><small>You retain ownership of your content; limited permissions support the service. <a href="./legal/data-ownership.html" target="_blank" rel="noopener noreferrer">Read Data Policy ↗</a></small></span></label>
+                </div>
+                <p id="consent-error" class="consent-error" role="alert" hidden>Please review and check all three required acknowledgments before continuing.</p>
+                <p class="agreement-footnote">Dispatch records the policy version and the time you accept against your verified Google identity. If these documents change materially, you may be asked to review them again.</p>
+              </section>
+              <button type="submit" class="button button-primary button-large form-submit onboard-cta" id="onboard-submit">Agree &amp; create my workspace <span aria-hidden="true">↗</span></button>
+              <p class="onboard-bottom-note">Protected by Google authentication and Firebase security rules. <button type="button" id="onboarding-signout" class="text-button">Not ready? Sign out</button></p>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -96,7 +136,11 @@
         <div class="dashboard-layout">
           <aside class="sidebar"><div class="sidebar-label">NAVIGATION</div><button type="button" class="side-link active" data-panel="jobs">↗ <span id="jobs-nav-label">Opportunities</span></button><button type="button" class="side-link" data-panel="profile">◎ <span>My profile</span></button><div class="sidebar-foot">POWERED BY FRANKS24<br>SECURE GOOGLE IDENTITY</div></aside>
           <div class="dashboard-main">
-            <section id="panel-jobs" class="dashboard-panel"><div class="panel-head"><div><span class="eyebrow dark-eyebrow">WORKSPACE / JOBS</span><h2 id="jobs-heading">Opportunities</h2><p id="jobs-description">New work will appear here when it's available.</p></div><button type="button" class="button button-dark" id="new-job-button" hidden>+ Post a job</button></div><div id="jobs-list" class="jobs-list"><div class="empty-state"><div class="empty-mark">↗</div><h3>Loading your workspace</h3><p>Please wait a moment.</p></div></div>
+            <section id="panel-jobs" class="dashboard-panel"><div class="panel-head"><div><span class="eyebrow dark-eyebrow">WORKSPACE / JOBS</span><h2 id="jobs-heading">Opportunities</h2><p id="jobs-description">New work will appear here when it's available.</p></div><button type="button" class="button button-dark" id="new-job-button" hidden>+ Post a job</button></div><div id="employer-approval-banner" class="verification-banner" role="status" aria-live="polite" hidden>
+                <div><strong id="employer-approval-heading">Verification required</strong><p id="employer-approval-description">An administrator must verify your employer account before you can publish opportunities.</p></div>
+                <button type="button" class="button button-outline-dark" id="refresh-employer-approval">Check status</button>
+              </div>
+              <div id="jobs-list" class="jobs-list"><div class="empty-state"><div class="empty-mark">↗</div><h3>Loading your workspace</h3><p>Please wait a moment.</p></div></div>
               <form id="job-form" class="job-form" hidden><h3>Post an opportunity</h3><div class="form-grid"><label>Job title <input id="job-title" maxlength="120" required placeholder="e.g. Event coordinator"></label><label>Location <input id="job-location" maxlength="120" required placeholder="e.g. Pretoria"></label><label>Work type <select id="job-type"><option value="Contract">Contract</option><option value="Part-time">Part-time</option><option value="Full-time">Full-time</option><option value="Once-off">Once-off</option></select></label><label>Compensation (optional) <input id="job-compensation" maxlength="100" placeholder="e.g. R350 / day"></label></div><label>Job details <textarea id="job-description" rows="5" maxlength="3000" required placeholder="Describe the work, timing and requirements"></textarea></label><div class="form-actions"><button type="button" class="button button-outline-dark" id="cancel-job">Cancel</button><button type="submit" class="button button-dark" id="save-job">Publish opportunity ↗</button></div></form>
             </section>
             <section id="panel-profile" class="dashboard-panel" hidden><div class="panel-head"><div><span class="eyebrow dark-eyebrow">WORKSPACE / ACCOUNT</span><h2>My profile</h2><p>Your Dispatch identity, backed by your Google account.</p></div></div><div id="profile-details" class="profile-details"></div></section>
@@ -106,7 +150,7 @@
       <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
     </main>
 
-    <footer class="footer"><span>© <span id="year">2026</span> FRANKS24 / DISPATCH</span><span>MOVE FORWARD, TOGETHER.</span><a href="#top">BACK TO TOP ↑</a></footer>
+    <footer class="footer"><span>© <span id="year">2026</span> FRANKS24 / DISPATCH</span><span>MOVE FORWARD, TOGETHER.</span><span class="footer-policies"><a href="./legal/terms.html">Terms</a><a href="./legal/privacy.html">Privacy</a><a href="./legal/data-ownership.html">Data rights</a></span><a href="#top">BACK TO TOP ↑</a></footer>
   </div>
 </body>
 </html>
