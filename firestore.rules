@@ -1,10 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
+    // Only Firebase sessions authenticated through the Google provider may access data.
+    function signedIn() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'google.com'; }
     function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
     function hasProfile() { return signedIn() && exists(userPath(request.auth.uid)); }
     function hasRole(role) { return hasProfile() && get(userPath(request.auth.uid)).data.role == role; }
+    function approvalPath(uid) { return /databases/$(database)/documents/employerApprovals/$(uid); }
+    // Employer verification is administered through privileged Firebase Console/Admin SDK access.
+    // A client cannot create or modify its own approval record.
+    function isApprovedEmployer() {
+      return hasRole('employer')
+        && exists(approvalPath(request.auth.uid))
+        && get(approvalPath(request.auth.uid)).data.status == 'approved';
+    }
     function validProfileFields() {
       return request.resource.data.keys().hasOnly([
         'displayName','email','location','phone','skills','role','photoURL','createdAt','updatedAt'
@@ -25,9 +34,13 @@ service cloud.firestore {
                     && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
     }
+    match /employerApprovals/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
     match /jobs/{jobId} {
       allow read: if hasProfile();
-      allow create: if hasRole('employer')
+      allow create: if isApprovedEmployer()
         && request.resource.data.keys().hasOnly(['title','description','location','type','compensation','status','createdBy','createdAt','updatedAt'])
         && request.resource.data.keys().hasAll(['title','description','location','type','compensation','status','createdBy','createdAt','updatedAt'])
         && request.resource.data.createdBy == request.auth.uid
@@ -38,7 +51,8 @@ service cloud.firestore {
         && request.resource.data.type in ['Contract','Part-time','Full-time','Once-off'];
       allow update: if hasRole('employer') && resource.data.createdBy == request.auth.uid
         && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status','updatedAt'])
-        && request.resource.data.status in ['open','closed'];
+        && (request.resource.data.status == 'closed' || (isApprovedEmployer() && request.resource.data.status == 'open'));
+      // Revoked employers can close existing posts, but cannot reopen or publish them.
       allow delete: if false;
     }
     match /applications/{applicationId} {

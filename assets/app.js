@@ -2,7 +2,7 @@ import {firebaseConfig} from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 const views = ["landing","onboarding","dashboard"];
-const state = {user:null, profile:null, role:"worker", auth:null, db:null, api:null};
+const state = {user:null, profile:null, role:"worker", approvedEmployer:false, auth:null, db:null, api:null};
 const GOOGLE_MARKUP = '<span class="google-g" aria-hidden="true"><svg viewBox="0 0 48 48" width="22" height="22"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.76 7.18l7.73 6C44.42 38.03 46.98 31.88 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.41 14.41 0 0 1 9.75 24c0-1.6.27-3.15.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.92 7.51 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.92-2.13 15.89-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>';
 let toastTimer;
 function toast(message,error=false){const el=$("toast");el.textContent=message;el.classList.toggle("error",error);el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,6500)}
@@ -20,7 +20,7 @@ async function initializeFirebase(){
   ]);
   const app=initializeApp(firebaseConfig);state.auth=getAuth(app);state.db=getFirestore(app);
   state.api={GoogleAuthProvider,signInWithPopup,signInWithRedirect,onAuthStateChanged,signOut,doc,getDoc,setDoc,addDoc,collection,query,where,getDocs,serverTimestamp};
-  onAuthStateChanged(state.auth,async user=>{try{state.user=user;if(!user){state.profile=null;showView("landing");return}setText("onboard-email",user.email||"Google account");const profileRef=doc(state.db,"users",user.uid);const snapshot=await getDoc(profileRef);if(snapshot.exists()){state.profile=snapshot.data();showDashboard()}else{state.profile=null;setText("profile-name",user.displayName||"");$("profile-name").value=user.displayName||"";showView("onboarding")}}catch(error){toast(errorMessage(error),true)}});
+  onAuthStateChanged(state.auth,async user=>{try{state.user=user;if(!user){state.profile=null;state.approvedEmployer=false;showView("landing");return}setText("onboard-email",user.email||"Google account");const profileRef=doc(state.db,"users",user.uid);const snapshot=await getDoc(profileRef);if(snapshot.exists()){state.profile=snapshot.data();showDashboard()}else{state.profile=null;setText("profile-name",user.displayName||"");$("profile-name").value=user.displayName||"";showView("onboarding")}}catch(error){toast(errorMessage(error),true)}});
  }catch(error){console.error("Firebase initialization failed",error);toast("Google sign-in is temporarily unavailable.",true)}
 }
 async function login(){
@@ -50,11 +50,49 @@ function showDashboard(){
  setText("dashboard-intro",employer?"Manage your openings and connect with people.":"Find opportunities and take your next step.");
  setText("jobs-nav-label",employer?"My jobs":"Opportunities");setText("jobs-heading",employer?"Your job posts":"Available opportunities");
  setText("jobs-description",employer?"Post and manage opportunities for your team.":"Jobs published by hiring teams appear here.");
- $("new-job-button").hidden=!employer;$("job-form").hidden=true;showView("dashboard");showPanel("jobs");renderProfile();loadJobs();
+ state.approvedEmployer=false;
+ $("new-job-button").hidden=true;$("job-form").hidden=true;
+ $("employer-approval-banner").hidden=!employer;
+ showView("dashboard");showPanel("jobs");renderProfile();loadJobs();
+ if(employer) refreshEmployerApproval();
 }
+async function refreshEmployerApproval(){
+ if(!state.user||state.profile?.role!=="employer")return;
+ const uid=state.user.uid;
+ const banner=$("employer-approval-banner"), title=$("employer-approval-heading");
+ const description=$("employer-approval-description"), button=$("refresh-employer-approval");
+ state.approvedEmployer=false;$("new-job-button").hidden=true;$("job-form").hidden=true;banner.hidden=false;
+ title.textContent="Verification pending";
+ description.textContent="You can use your workspace, but a Dispatch administrator must verify your hiring account before you can publish jobs.";
+ button.disabled=true;button.textContent="Checking…";
+ try{
+  const docRef=state.api.doc(state.db,"employerApprovals",uid);
+  const result=await state.api.getDoc(docRef);
+  if(state.user?.uid!==uid)return;
+  const status=result.exists()?result.data().status:"pending";
+  state.approvedEmployer=status==="approved";
+  $("new-job-button").hidden=!state.approvedEmployer;
+  if(state.approvedEmployer){
+   title.textContent="Employer verified";
+   description.textContent="Your hiring account has been approved. You can now publish opportunities.";
+  }else if(status==="rejected"||status==="suspended"){
+   title.textContent=status==="suspended"?"Verification suspended":"Verification not approved";
+   description.textContent="Publishing is disabled. Contact the Dispatch administrator if you need a review.";
+  }
+ }catch(error){
+  if(state.user?.uid!==uid)return;
+  state.approvedEmployer=false;
+  title.textContent="Verification unavailable";
+  description.textContent="We couldn't confirm your approval status. Publishing remains disabled. Try checking again.";
+  toast(errorMessage(error),true);
+ }finally{
+  if(state.user?.uid===uid){button.disabled=false;button.textContent="Check status";renderProfile()}
+ }
+}
+$("refresh-employer-approval").addEventListener("click",refreshEmployerApproval);
 function showPanel(panel){document.querySelectorAll(".dashboard-panel").forEach(x=>x.hidden=x.id!=="panel-"+panel);document.querySelectorAll("[data-panel]").forEach(x=>x.classList.toggle("active",x.dataset.panel===panel))}
 document.querySelectorAll("[data-panel]").forEach(button=>button.addEventListener("click",()=>showPanel(button.dataset.panel)));
-function renderProfile(){const container=$("profile-details");container.replaceChildren();const p=state.profile||{};for(const [label,value] of [["Name",p.displayName],["Email",p.email],["Account type",p.role==="employer"?"Hiring team":"Job seeker"],["Location",p.location],["Phone",p.phone||"Not provided"],["Skills",p.skills||"Not provided"]]){const box=document.createElement("div");box.className="profile-item";const l=document.createElement("span");l.textContent=label;const v=document.createElement("strong");v.textContent=value||"—";box.append(l,v);container.append(box)}}
+function renderProfile(){const container=$("profile-details");container.replaceChildren();const p=state.profile||{};for(const [label,value] of [["Name",p.displayName],["Email",p.email],["Account type",p.role==="employer"?"Hiring team":"Job seeker"],["Location",p.location],["Phone",p.phone||"Not provided"],["Skills",p.skills||"Not provided"],...(p.role==="employer"?[["Employer approval",state.approvedEmployer?"Verified":"Pending / not approved"]]:[])]){const box=document.createElement("div");box.className="profile-item";const l=document.createElement("span");l.textContent=label;const v=document.createElement("strong");v.textContent=value||"—";box.append(l,v);container.append(box)}}
 function emptyState(heading,detail){const root=document.createElement("div");root.className="empty-state";const icon=document.createElement("div");icon.className="empty-mark";icon.textContent="↗";const h=document.createElement("h3");h.textContent=heading;const p=document.createElement("p");p.textContent=detail;root.append(icon,h,p);return root}
 async function loadJobs(){
  const list=$("jobs-list");list.replaceChildren(emptyState("Loading opportunities","Checking the latest information."));
@@ -80,10 +118,15 @@ async function applyForJob(jobId,button){
  button.textContent="Applied ✓";toast("Application submitted successfully.");
  }catch(error){button.disabled=false;toast(errorMessage(error),true)}
 }
-$("new-job-button").addEventListener("click",()=>{$("job-form").hidden=false;$("job-title").focus()});
+$("new-job-button").addEventListener("click",()=>{
+ if(!state.approvedEmployer){toast("Employer verification is required before publishing.",true);return}
+ $("job-form").hidden=false;$("job-title").focus()
+});
 $("cancel-job").addEventListener("click",()=>{$("job-form").reset();$("job-form").hidden=true});
 $("job-form").addEventListener("submit",async event=>{
- event.preventDefault();if(state.profile?.role!=="employer"||!event.currentTarget.reportValidity())return;
+ event.preventDefault();if(state.profile?.role!=="employer")return;
+ if(!state.approvedEmployer){toast("Your employer account must be verified before publishing.",true);return}
+ if(!event.currentTarget.reportValidity())return;
  const button=$("save-job");button.disabled=true;
  try{await state.api.addDoc(state.api.collection(state.db,"jobs"),{title:$("job-title").value.trim(),location:$("job-location").value.trim(),type:$("job-type").value,compensation:$("job-compensation").value.trim(),description:$("job-description").value.trim(),status:"open",createdBy:state.user.uid,createdAt:state.api.serverTimestamp(),updatedAt:state.api.serverTimestamp()});$("job-form").reset();$("job-form").hidden=true;toast("Opportunity published.");await loadJobs()}catch(error){toast(errorMessage(error),true)}finally{button.disabled=false}
 });
