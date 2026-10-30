@@ -4,7 +4,16 @@ service cloud.firestore {
     // Only Firebase sessions authenticated through the Google provider may access data.
     function signedIn() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'google.com'; }
     function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
-    function hasProfile() { return signedIn() && exists(userPath(request.auth.uid)); }
+    // Bump the pinned version when publishing materially revised legal policies.
+    function agreementPath(uid) {
+      return /databases/$(database)/documents/agreements/$(uid)/versions/2026-10-30-v1;
+    }
+    function hasCurrentAgreement() {
+      return signedIn() && exists(agreementPath(request.auth.uid));
+    }
+    function hasProfile() {
+      return signedIn() && hasCurrentAgreement() && exists(userPath(request.auth.uid));
+    }
     function hasRole(role) { return hasProfile() && get(userPath(request.auth.uid)).data.role == role; }
     function approvalPath(uid) { return /databases/$(database)/documents/employerApprovals/$(uid); }
     // Employer verification is administered through privileged Firebase Console/Admin SDK access.
@@ -25,17 +34,41 @@ service cloud.firestore {
       && request.resource.data.email == request.auth.token.email
       && request.resource.data.role in ['worker','employer'];
     }
+    // Append-only acceptance evidence. Client cannot falsify acceptedAt, retract flags,
+    // accept for a different identity or overwrite the existing acceptance record.
+    match /agreements/{uid}/versions/{version} {
+      allow get: if signedIn() && uid == request.auth.uid;
+      allow list: if false;
+      allow create: if signedIn() && uid == request.auth.uid
+        && version == '2026-10-30-v1'
+        && request.resource.data.keys().hasOnly([
+          'uid','email','version','termsAccepted','privacyAcknowledged',
+          'ownershipAcknowledged','acceptedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid','email','version','termsAccepted','privacyAcknowledged',
+          'ownershipAcknowledged','acceptedAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.version == version
+        && request.resource.data.termsAccepted == true
+        && request.resource.data.privacyAcknowledged == true
+        && request.resource.data.ownershipAcknowledged == true
+        && request.resource.data.acceptedAt == request.time;
+      allow update, delete: if false;
+    }
     match /users/{uid} {
       allow read: if signedIn() && uid == request.auth.uid;
-      allow create: if signedIn() && uid == request.auth.uid && validProfileFields();
-      allow update: if signedIn() && uid == request.auth.uid && validProfileFields()
+      allow create: if signedIn() && hasCurrentAgreement() && uid == request.auth.uid && validProfileFields();
+      allow update: if signedIn() && hasCurrentAgreement() && uid == request.auth.uid && validProfileFields()
                     && request.resource.data.role == resource.data.role
                     && request.resource.data.email == resource.data.email
                     && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
     }
     match /employerApprovals/{uid} {
-      allow get: if signedIn() && request.auth.uid == uid;
+      allow get: if hasProfile() && request.auth.uid == uid;
       allow list, create, update, delete: if false;
     }
     match /jobs/{jobId} {
