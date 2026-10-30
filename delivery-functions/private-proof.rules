@@ -1,0 +1,8 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Candidate policy for a dedicated, private proof bucket only.
+    // Firebase Admin access is controlled by IAM, not these rules.
+    match /{object=**} { allow read, write: if false; }
+  }
+}
