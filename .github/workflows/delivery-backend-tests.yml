@@ -7,6 +7,9 @@ on:
     paths: ['delivery-functions/**', 'deliveries/**', 'firestore.rules', 'firebase.delivery.json', '.github/workflows/delivery-backend-tests.yml']
 permissions:
   contents: read
+concurrency:
+  group: delivery-backend-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
