@@ -23,8 +23,8 @@ export function createDeliveryApi({base, origin, getUser, fetcher = fetch}) {
   }
   const id = value => {if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error("Enter a valid delivery reference."); return value;};
   return {
-    quotes: () => request("quotes"),
-    shipments: () => request("shipments?limit=100"),
+    quotes: (cursor) => request(`quotes?limit=100${cursor ? `&cursor=${id(cursor)}` : ""}`),
+    shipments: (cursor) => request(`shipments?limit=100${cursor ? `&cursor=${id(cursor)}` : ""}`),
     track: reference => request(`shipments/${id(reference)}`),
     quote: (input, acceptance, key) => request("quotes", {body: {...input, acceptance}, key}),
     book: (input, acceptance, key) => request("bookings", {body: {...input, acceptance}, key}),

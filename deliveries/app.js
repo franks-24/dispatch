@@ -4,6 +4,7 @@ import {createDeliveryApi} from "./api.js";
 import {quoteInput, bookingInput, bookable, money, statuses} from "./model.js";
 const $ = id => document.getElementById(id);
 let user = null, auth, sdk, quotes = [], epoch = 0;
+let shipmentCursor=null,quoteCursor=null;
 const attempts = new Map();
 const ready = () => Boolean(user && config.enabled && config.policiesApproved);
 const api = createDeliveryApi({base:config.apiBase, origin:location.origin, getUser:()=>user});
@@ -16,6 +17,7 @@ function syncControls() {
 }
 function clearPrivate() {
   epoch++; quotes = []; attempts.clear();
+  shipmentCursor=null;quoteCursor=null;$("more-shipments").hidden=true;$("more-quotes").hidden=true;
   for (const id of ["quote-form","booking-form","tracking-form"]) $(id).reset();
   document.querySelectorAll('form button[type="submit"]').forEach(button=>button.disabled=false);
   for (const id of ["history","tracking-result","quotes"]) $(id).replaceChildren();
@@ -36,6 +38,7 @@ function quoteOptions() {
   for(const q of available){const option=node("option",`${q.id} · ${money(q)} · expires ${new Date(q.expiresAt).toLocaleString("en-ZA")}`);option.value=q.id;select.append(option);}
   select.value=available.some(q=>q.id===previous)?previous:"";
 }
+function quoteCard(q) {const row=node("article","","shipment");row.append(node("h4",q.id),node("p",`${money(q)} · ${q.status === "quoted" ? (bookable(q) ? "Ready to book" : "Quote expired or unavailable") : q.status==="booked"?"Booked":"Awaiting review"}`));return row;}
 function shipmentCard(shipment) {
   const card=node("article","","shipment");
   card.append(node("h3",shipment.reference || shipment.id || "Shipment"),node("span",statuses[shipment.status] || "Status unavailable","badge"));
@@ -57,12 +60,14 @@ async function refresh() {
     if(version!==epoch)return;
     if(!Array.isArray(quotePage.items)||!Array.isArray(shipmentPage.items))throw new Error("The delivery service returned an invalid workspace.");
     quotes=quotePage.items;quoteOptions();
+    quoteCursor=quotePage.nextCursor;shipmentCursor=shipmentPage.nextCursor;
+    $("more-quotes").hidden=!quoteCursor;$("more-shipments").hidden=!shipmentCursor;
     $("quotes").replaceChildren();
-    for(const q of quotes){const row=node("article","","shipment");row.append(node("h4",q.id),node("p",`${money(q)} · ${q.status === "quoted" ? (bookable(q) ? "Ready to book" : "Quote expired or unavailable") : "Awaiting review"}`));$("quotes").append(row);}
+    for(const q of quotes)$("quotes").append(quoteCard(q));
     if(!quotes.length)$("quotes").append(node("p","No quote requests yet."));
     $("history").replaceChildren(...shipmentPage.items.map(shipmentCard));
-    $("history-note").textContent=shipmentPage.items.length ? (shipmentPage.nextCursor ? "Showing your latest 100 shipments. Older records require backend pagination support in this interface." : "Your recorded shipments are shown below.") : "No shipments yet. Request a quote to get started.";
-  } catch(error){if(version===epoch){$("history").replaceChildren();$("quotes").replaceChildren();quotes=[];quoteOptions();$("history-note").textContent="Unable to load your workspace. Use Refresh to try again.";message(error.message);}}
+    $("history-note").textContent=shipmentPage.items.length ? (shipmentCursor ? "Showing your latest shipments. Load older shipments below." : "Your recorded shipments are shown below.") : "No shipments yet. Request a quote to get started.";
+  } catch(error){if(version===epoch){$("history").replaceChildren();$("quotes").replaceChildren();quotes=[];quoteOptions();shipmentCursor=null;quoteCursor=null;$("more-shipments").hidden=true;$("more-quotes").hidden=true;$("history-note").textContent="Unable to load your workspace. Use Refresh to try again.";message(error.message);}}
   finally{if(version===epoch)syncControls();}
 }
 function idempotency(name, body) {const fingerprint=JSON.stringify(body);const prior=attempts.get(name);if(prior?.fingerprint===fingerprint)return prior.key;const key=crypto.randomUUID();attempts.set(name,{fingerprint,key});return key;}
@@ -84,6 +89,12 @@ $("tracking-form").addEventListener("submit",async event=>{
   catch(error){if(version===epoch)message(error.message);}finally{if(version===epoch)button.disabled=false;}
 });
 $("refresh").addEventListener("click",refresh);
+for(const kind of ["shipments","quotes"])$("more-"+kind).addEventListener("click",async()=>{
+  if(!ready())return;const version=epoch,button=$("more-"+kind),cursor=kind==="shipments"?shipmentCursor:quoteCursor;
+  if(!cursor)return;button.disabled=true;
+  try{const page=await api[kind](cursor);if(version!==epoch)return;if(!Array.isArray(page.items))throw new Error("Unable to load older records.");if(kind==="shipments"){$("history").append(...page.items.map(shipmentCard));shipmentCursor=page.nextCursor;}else{quotes.push(...page.items);$("quotes").append(...page.items.map(quoteCard));quoteCursor=page.nextCursor;quoteOptions();}button.hidden=!page.nextCursor;}
+  catch(error){if(version===epoch)message(error.message);}finally{button.disabled=false;}
+});
 $("login").addEventListener("click",async()=>{if(!auth||!sdk)return;$("login").disabled=true;try{await sdk.signInWithPopup(auth,new sdk.GoogleAuthProvider());}catch(error){message(error.code==="auth/popup-closed-by-user"?"Sign-in cancelled.":"Google sign-in could not complete. Please try again.");}finally{$("login").disabled=false;}});
 $("logout").addEventListener("click",async()=>{try{await sdk.signOut(auth);}catch{message("Sign-out could not complete. Please try again.");}});
 async function initialize() {
