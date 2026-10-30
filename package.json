@@ -7,6 +7,7 @@
   "scripts": {
     "test:rules": "firebase emulators:exec --project dispatch-rules-test --only firestore \"node --test tests/firestore.rules.test.mjs\"",
     "test:onboarding": "node --test tests/onboarding.test.mjs",
+    "test:config": "node --test tests/firebase-config.test.mjs",
     "test:identity:unit": "node --test tests/identity/session.test.mjs tests/identity/activation.test.mjs",
     "test:identity": "firebase emulators:exec --project demo-dispatch-identity --only auth,firestore \"node tests/identity/prepare.mjs && playwright test --config tests/identity/playwright.config.mjs\""
   },

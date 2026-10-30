@@ -4,7 +4,7 @@ The identity code and automated emulator tests do not themselves enable the prod
 
 ## Hosting and mobile behaviour
 
-Keep the existing custom domain and the existing built-in GitHub Pages publisher. The duplicate custom deploy-pages workflow is removed so the branch is published once. Static sources use Firebase signInWithPopup; no cross-domain redirect fallback is attempted. For blocked popups, retry in the normal Safari, Chrome or Edge browser with popups permitted. Do not disable browser storage protections.
+Keep the existing custom domain and the validated configuration-injecting GitHub Actions publisher. Set repository Settings → Pages → Build and deployment → Source to GitHub Actions to retire the legacy branch publisher. This repository setting requires an administrator; a source-file change cannot remove the legacy dynamic workflow. Do not remove the public Firebase config injection from deploy-pages.yml. Static sources use Firebase signInWithPopup; no cross-domain redirect fallback is attempted. For blocked popups, retry in the normal Safari, Chrome or Edge browser with popups permitted. Do not disable browser storage protections.
 
 Reference: https://firebase.google.com/docs/auth/web/redirect-best-practices
 
@@ -17,7 +17,7 @@ Use the existing project dispatch-1491f. Do not create a project, change billing
 3. Run: node scripts/activate-dispatch-identity.mjs
 4. If several web apps exist, set FIREBASE_WEB_APP_ID to the selected app's public ID. The script refuses ambiguous app selection, a missing Google OAuth configuration, an unverified/non-Standard default database or unexpected auth domain.
 5. The script enables an existing configured Google provider, adds only dispatch.franks24.com to authorised domains, compiles and publishes the reviewed Firestore rules, verifies the resulting state, and writes the public assets/config.js. It does not create OAuth client credentials or print access tokens.
-6. Publish the generated assets/config.js through the repository. These Firebase Web SDK settings are public configuration; they are not service-account credentials. Never include gcloud access tokens, OAuth client secrets or service-account JSON in the repository, chat or screenshots.
+6. Copy the generated configuration JSON into the repository Actions variable FIREBASE_WEB_CONFIG_JSON, then run the Deploy Dispatch workflow. Keep the checked-in assets/config.js null; the publisher injects the validated public settings into its artifact. These Firebase Web SDK settings are public configuration; they are not service-account credentials. Never include gcloud access tokens, OAuth client secrets or service-account JSON in the repository, chat or screenshots.
 7. Run node scripts/verify-dispatch-live.mjs --require-config after publication. This checks DNS, valid TLS, HTTP 200, referenced assets and non-null frontend settings. It does not establish real Google account login.
 
 Firebase Console: https://console.firebase.google.com/project/dispatch-1491f/authentication/providers
