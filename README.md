@@ -37,11 +37,11 @@ The application is a static HTML/CSS/JavaScript frontend hosted using GitHub Pag
 |---|---|
 | Landing page | Responsive dark-navy/lime design, animated accents and one Google entry point |
 | Single login / signup | Google-only sign-in through Firebase Authentication; no usernames or local passwords |
-| Consent-first onboarding | Animated, mobile-responsive role capture; separate mandatory Terms, Privacy and Data Usage acknowledgments |
-| Returning users | Firebase session, profile and current-policy agreement check before workspace access |
+| First-time onboarding | Collect name, location, optional details and job-seeker / employer role |
+| Returning users | Firebase session observation and profile lookup |
 | Job seekers | View open listings and apply once per job |
-| Hiring teams | Register with Google, await administrator approval, then publish and manage job listings |
-| Security rules | Versioned, immutable Google-linked agreement evidence; rule-level gates for profiles, jobs and applications |
+| Hiring teams | Publish job listings and view own postings |
+| Security rules | Source-controlled Firestore rules for profiles, jobs and applications |
 | Documentation | Firebase setup, GitHub Pages configuration, deployment requirements and diagrams |
 | Visual assets | Original animated SVG README hero, UI illustration and authentication flow diagram |
 
@@ -55,29 +55,15 @@ flowchart LR
   B --> C[Firebase Google Authentication]
   C --> D{Existing profile?}
   D -->|No| E[First visit: select worker or employer]
-  E --> J[Review and accept three policies]\n  J --> F[Record immutable versioned agreement]\n  F --> K[Create protected user profile]
-  D -->|Yes| G[Restore profile and check policy acceptance]
-  K --> H[Role-specific workspace]
-  G --> L{Current agreement exists?}\n  L -->|No| J\n  L -->|Yes| H
+  E --> F[Create protected user profile]
+  D -->|Yes| G[Restore existing profile]
+  F --> H[Role-specific workspace]
+  G --> H
   H --> I[Sign out]
   I --> A
 ```
 
 **One action serves both cases:** the Firebase Google provider creates the account identity on first successful access and signs in the same identity on future visits. A new user completes profile setup after that initial authentication.
-
-## Consent-first onboarding and legal-review gate
-
-The new responsive onboarding experience is an authenticated capture page following **Continue with Google**. Users choose **job seeker** or **hiring team**, enter only the required profile data, and must individually check each of three unticked acknowledgments:
-
-1. [Platform Terms of Use](legal/terms.html) — affirmative contract acceptance.
-2. [Privacy Notice](legal/privacy.html) — acknowledgment of a notice, **not** blanket consent to unrelated processing.
-3. [Data Ownership & Usage Policy](legal/data-ownership.html) — acknowledgment of content rights and the limited service licence; Dispatch does **not** acquire ownership of user content through onboarding.
-
-The client creates `agreements/{uid}/versions/2026-10-30-v1` with the authenticated Google UID/email, separate boolean acknowledgments, policy version and Firestore server timestamp. **Firestore Security Rules** validate these fields, reject client edits or deletion, and require the current version before creating profiles or accessing jobs and applications. Returning users with old profiles but without the current release must re-acknowledge before accessing the workspace. The app's privacy page clearly identifies processing purposes, rights and retention dependencies. An optional marketing opt-in is **not** bundled into signup.
-
-**Important: the three legal documents are pre-launch drafts, not approved legal instruments.** Before onboarding real people, confirm the responsible legal entity, official support/Information Officer contact, POPIA handling and cross-border safeguards, retention/deletion procedure and counsel's sign-off. Bumping the policy requires updating both `assets/consent-policy.js` and `firestore.rules`, updating legal pages, and running rule tests. Publishing the site does not publish Firestore rules.
-
-**Testing:** `npm run test:onboarding` checks onboarding content and policy version consistency; `npm run test:rules` runs security policy tests in the Firebase Firestore emulator.
 
 ## Architecture
 
@@ -103,22 +89,10 @@ flowchart TD
 2. Register a **Web app** under project settings; copy its **public Firebase web config** into [`assets/config.js`](assets/config.js). Keep service-account credentials private.
 3. Under **Authentication → Sign-in method**, enable **Google** and select a support email.
 4. Under **Authentication → Settings → Authorized domains**, authorise **`dispatch.franks24.com`**. Add the GitHub Pages fallback domain only if you intend to use it.
-5. Create the production Firestore database and publish the reviewed [`firestore.rules`](firestore.rules). The website deployment does not deploy Firestore rules. **Administrator verification is mandatory** for employer job publishing; approval records are maintained outside the client in `employerApprovals/{uid}`.
+5. Create the production Firestore database and publish the reviewed [`firestore.rules`](firestore.rules). The website deployment does not deploy Firestore rules.
 6. Test first-time Google onboarding, returning Google login, sign-out, job-seeker access and employer access. Confirm unauthenticated requests are denied.
 
 Official references: [Google sign-in with Firebase](https://firebase.google.com/docs/auth/web/google-signin) · [Firebase authorised domains](https://firebase.google.com/docs/auth/web/redirect-best-practices) · [Cloud Firestore security rules](https://firebase.google.com/docs/firestore/security/get-started).
-
-### Employer verification (Firebase Spark)
-
-Any Google user can onboard as a job seeker or an employer. Employer accounts **cannot publish jobs until a Dispatch administrator verifies the organisation**. The employer sees a pending-verification notice with a **Check status** action. Firestore Security Rules enforce the restriction even for a modified or malicious browser client.
-
-Approvals are held in `employerApprovals/{firebaseAuthUid}`, separate from self-managed profiles. Only privileged Firebase administrators can write them; browser users can read their own status. To approve an employer, confirm the organisation's legitimacy, then create/update the approval document with `status: "approved"` using Firestore Console or Admin SDK. `rejected`, `suspended` or missing approval blocks publishing. Revoked employers may close existing jobs but not reopen them.
-
-**Launch checklist and admin procedure:** [Firebase setup and employer approval](docs/firebase-setup.md).
-
-**Rules tests:** `npm install && npm run test:rules` runs the Firestore emulator tests, including self-approval denial, unverified publishing denial, verified publishing, revoked publishing and worker restrictions. Test workflow runs in GitHub Actions on relevant PRs.
-
-The public Firebase Web SDK settings in `assets/config.js` **must still be supplied**. This pull request does **not** activate live authentication or deploy security rules to `dispatch-1491f` automatically.
 
 ### GitHub Pages publishing
 
@@ -134,14 +108,14 @@ The [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) action deploys the 
 .
 ├── index.html                     # Public landing, onboarding and workspace markup
 ├── assets/
-│   ├── app.js                      # Google auth, agreement gating, profile and jobs\n│   ├── consent-policy.js           # Current legal release and storage path\n│   ├── onboarding.css              # Responsive animated capture interface\n│   ├── legal.css                   # Responsive policy document styling
+│   ├── app.js                      # Google auth, profile, jobs and applications
 │   ├── config.js                   # Public Firebase web config — needs setup
 │   ├── styles.css                  # Responsive styles and motion
 │   ├── favicon.svg
 │   ├── readme-banner.svg           # Animated brand illustration
 │   ├── readme-auth-flow.svg        # Identity flow illustration
 │   └── readme-workspace.svg        # Landing page concept illustration
-├── legal/                         # Terms, Privacy and Data Usage policy drafts\n├── firestore.rules                 # Agreement and workspace security gates
+├── firestore.rules                 # Firebase data-access policy
 ├── .github/workflows/deploy-pages.yml
 ├── CNAME                           # Custom domain
 ├── LICENSE
