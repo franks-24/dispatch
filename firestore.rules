@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function hasProfile() { return signedIn() && exists(userPath(request.auth.uid)); }
+    function hasRole(role) { return hasProfile() && get(userPath(request.auth.uid)).data.role == role; }
+    function validProfileFields() {
+      return request.resource.data.keys().hasOnly([
+        'displayName','email','location','phone','skills','role','photoURL','createdAt','updatedAt'
+      ]) && request.resource.data.keys().hasAll(['displayName','email','location','role','createdAt','updatedAt'])
+      && request.resource.data.displayName is string && request.resource.data.displayName.size() > 0
+      && request.resource.data.displayName.size() <= 100
+      && request.resource.data.location is string && request.resource.data.location.size() > 0
+      && request.resource.data.location.size() <= 120
+      && request.resource.data.email == request.auth.token.email
+      && request.resource.data.role in ['worker','employer'];
+    }
+    match /users/{uid} {
+      allow read: if signedIn() && uid == request.auth.uid;
+      allow create: if signedIn() && uid == request.auth.uid && validProfileFields();
+      allow update: if signedIn() && uid == request.auth.uid && validProfileFields()
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.email == resource.data.email
+                    && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+    match /jobs/{jobId} {
+      allow read: if hasProfile();
+      allow create: if hasRole('employer')
+        && request.resource.data.keys().hasOnly(['title','description','location','type','compensation','status','createdBy','createdAt','updatedAt'])
+        && request.resource.data.keys().hasAll(['title','description','location','type','compensation','status','createdBy','createdAt','updatedAt'])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120
+        && request.resource.data.description is string && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 3000
+        && request.resource.data.location is string && request.resource.data.location.size() > 0 && request.resource.data.location.size() <= 120
+        && request.resource.data.type in ['Contract','Part-time','Full-time','Once-off'];
+      allow update: if hasRole('employer') && resource.data.createdBy == request.auth.uid
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status','updatedAt'])
+        && request.resource.data.status in ['open','closed'];
+      allow delete: if false;
+    }
+    match /applications/{applicationId} {
+      allow create: if hasRole('worker')
+        && request.resource.data.keys().hasOnly(['jobId','applicantId','status','createdAt'])
+        && request.resource.data.keys().hasAll(['jobId','applicantId','status','createdAt'])
+        && request.resource.data.applicantId == request.auth.uid
+        && applicationId == request.resource.data.jobId + '_' + request.auth.uid
+        && request.resource.data.status == 'submitted'
+        && exists(/databases/$(database)/documents/jobs/$(request.resource.data.jobId))
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'open';
+      allow read: if hasProfile() && (
+        resource.data.applicantId == request.auth.uid
+        || (hasRole('employer') && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.createdBy == request.auth.uid)
+      );
+      allow update, delete: if false;
+    }
+  }
+}
