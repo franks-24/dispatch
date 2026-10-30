@@ -59,3 +59,14 @@ Use Google Authentication + Firestore + static GitHub Pages hosting. Monitor Fir
 - Authentication provider and authorized domains must be set in Firebase Console.
 - Firestore database and security rules must be published to the actual Firebase project.
 - First real Google login, employer approval and job application must pass end-to-end production/staging validation.
+
+## 6. Consent-first onboarding and release-control checklist
+
+- Review and approve the linked [Terms](../legal/terms.html), [Privacy Notice](../legal/privacy.html), and [Data Ownership & Usage Policy](../legal/data-ownership.html). They are explicitly **pre-launch drafts**.
+- Identify the exact responsible legal entity, physical address, Information Officer, official support/privacy contact, accessible complaints process, data retention schedule and erasure/export operations. Ensure POPIA and third-party transfer obligations are addressed before launch.
+- Confirm the active release identifier `2026-10-30-v1` in the three policy page footers, `assets/consent-policy.js` and `firestore.rules`. Change all together for a materially new release; never silently reuse a previous release identifier.
+- Verify all three checkboxes are clear on first load, separately actionable, linked to complete legal documents and required for submission. An acknowledgment of the Privacy Notice is not optional marketing consent.
+- Acceptance records are stored in `agreements/{uid}/versions/{release}` with `uid`, `email`, `version`, `termsAccepted`, `privacyAcknowledged`, `ownershipAcknowledged`, and Firestore server `acceptedAt`. The client may create but never update/delete. A privileged controller must process valid erasure requests according to legal duties.
+- Activate updated Firestore Security Rules **before** deploying the new UI. Rules enforce current consent before profile creation and job/application access; existing profiles without consent are returned to the agreement screen.
+- Execute `npm run test:onboarding`, `npm run test:rules`, then verify a fresh Google session, return session, non-Google denial, older profile migration, employer approval, applications, mobile screens and keyboard navigation. Do not assume successful static hosting means production consent capture works.
+- The landing page is deployed on GitHub Pages; Firebase Google SSO remains blocked until correct public web app settings, provider, authorised domain and Firestore database/rules are activated. This is compatible with Firebase Spark; no Vercel is used.

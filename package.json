@@ -5,7 +5,8 @@
   "description": "Dispatch Firebase rules validation tooling",
   "type": "module",
   "scripts": {
-    "test:rules": "firebase emulators:exec --project dispatch-rules-test --only firestore \"node --test tests/firestore.rules.test.mjs\""
+    "test:rules": "firebase emulators:exec --project dispatch-rules-test --only firestore \"node --test tests/firestore.rules.test.mjs\"",
+    "test:onboarding": "node --test tests/onboarding.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
