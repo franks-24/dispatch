@@ -3,6 +3,7 @@ import {getAuth} from "firebase-admin/auth";
 import {getFirestore} from "firebase-admin/firestore";
 import {getStorage} from "firebase-admin/storage";
 import {createFirestoreStore} from "./firestore-store.js";
+import {validatePrivateBucket} from "./proof-policy.js";
 
 // No production database is assumed. Fail closed until a Standard native-mode
 // instance has been explicitly selected and its live metadata verified.
@@ -20,12 +21,17 @@ export async function createRuntime(env=process.env) {
   const appName=`franks24-delivery-${projectId}`;
   const app=getApps().find(app=>app.name===appName)||initializeApp({credential,projectId},appName);
   const db=getFirestore(app,databaseId), store=createFirestoreStore(db);
+  async function proofBucket() {
+    if(!env.DELIVERY_PROOF_BUCKET)throw new Error("Proof storage is not configured.");
+    const bucket=getStorage(app).bucket(env.DELIVERY_PROOF_BUCKET);
+    const [[metadata],[policy]]=await Promise.all([bucket.getMetadata(),bucket.iam.getPolicy()]);
+    validatePrivateBucket(metadata,policy);return bucket;
+  }
   return {
-    app,db,store,
+    app,db,store,proofBucket,
     verifyToken:token=>getAuth(app).verifyIdToken(token,true),
     async readProof(proof) {
-      if(!env.DELIVERY_PROOF_BUCKET)throw new Error("Proof storage is not configured.");
-      const file=getStorage(app).bucket(env.DELIVERY_PROOF_BUCKET).file(proof.path,{generation:proof.generation});
+      const file=(await proofBucket()).file(proof.path,{generation:proof.generation});
       const [metadata]=await file.getMetadata();
       if(metadata.contentType!=="application/pdf"||Number(metadata.size)>10*1024*1024||metadata.metadata?.firebaseStorageDownloadTokens)throw new Error("Proof metadata failed validation.");
       const [bytes]=await file.download({validation:"crc32c"});return bytes;
