@@ -19,6 +19,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Node for Firebase config validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inject validated public Firebase Web config
+        env:
+          FIREBASE_WEB_CONFIG_JSON: ${{ vars.FIREBASE_WEB_CONFIG_JSON }}
+        run: node tools/write-firebase-config.mjs
+      - name: Verify onboarding and Firebase config tooling
+        run: npm run test:onboarding && npm run test:config
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
