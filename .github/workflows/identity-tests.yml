@@ -33,6 +33,7 @@ jobs:
           path: test-results/
           retention-days: 14
       - name: Verify public DNS, HTTPS and asset responses
+        if: always()
         run: node scripts/verify-dispatch-live.mjs
         env:
           VERIFY_PUBLISHED_SOURCE: ${{ github.event_name == 'push' && 'true' || 'false' }}
