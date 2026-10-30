@@ -24,7 +24,7 @@
 
 The application is a static HTML/CSS/JavaScript frontend hosted using GitHub Pages, with Firebase Authentication for Google identity and Cloud Firestore for user profiles, jobs and applications. **No Vercel deployment is required.**
 
-> **Deployment status:** The GitHub Pages workflow is present and has completed successfully. This does **not** establish that the custom domain resolves everywhere, or that live Google sign-in works. The public Firebase configuration in `assets/config.js` is currently `null`, so real Google SSO **still needs activation**. Never represent the login as active until an end-to-end test succeeds.
+> **Deployment status:** The HTTPS landing page is reachable, but end-to-end Google SSO has not been verified. The checked-in `assets/config.js` deliberately stays `null`; GitHub Actions generates the public browser configuration at deployment from the repository variable `FIREBASE_WEB_CONFIG_JSON`. Production deployment now fails closed when the variable is missing or targets the wrong project. Google provider, authorized domains, Firestore and rules still require separate verification. Never represent the login as active until an actual Google login succeeds.
 
 <div align="center">
 <img src="assets/readme-workspace.svg" width="100%" alt="Concept illustration of the Dispatch landing page, Google sign-in button and job-seeker and hiring-team experiences." />
@@ -86,7 +86,7 @@ flowchart TD
 ## Activate Google SSO
 
 1. Open the [Firebase Console](https://console.firebase.google.com/) and create/select the Dispatch project.
-2. Register a **Web app** under project settings; copy its **public Firebase web config** into [`assets/config.js`](assets/config.js). Keep service-account credentials private.
+2. Register/select the existing Firebase Web app and add its **public web configuration JSON** as the GitHub Actions repository variable **`FIREBASE_WEB_CONFIG_JSON`** under [Settings → Secrets and variables → Actions → Variables](https://github.com/franks-24/dispatch/settings/variables/actions). Include `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`, and optional `measurementId`. The [Pages workflow](.github/workflows/deploy-pages.yml) writes the config into the published JavaScript module only after validating the project. Never place service-account credentials or OAuth client secrets in this variable.
 3. Under **Authentication → Sign-in method**, enable **Google** and select a support email.
 4. Under **Authentication → Settings → Authorized domains**, authorise **`dispatch.franks24.com`**. Add the GitHub Pages fallback domain only if you intend to use it.
 5. Create the production Firestore database and publish the reviewed [`firestore.rules`](firestore.rules). The website deployment does not deploy Firestore rules.
@@ -109,12 +109,13 @@ The [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) action deploys the 
 ├── index.html                     # Public landing, onboarding and workspace markup
 ├── assets/
 │   ├── app.js                      # Google auth, profile, jobs and applications
-│   ├── config.js                   # Public Firebase web config — needs setup
+│   ├── config.js                   # Unconfigured in Git; generated for deployment by CI
 │   ├── styles.css                  # Responsive styles and motion
 │   ├── favicon.svg
 │   ├── readme-banner.svg           # Animated brand illustration
 │   ├── readme-auth-flow.svg        # Identity flow illustration
 │   └── readme-workspace.svg        # Landing page concept illustration
+├── tools/write-firebase-config.mjs # CI: validates and generates public Firebase config
 ├── firestore.rules                 # Firebase data-access policy
 ├── .github/workflows/deploy-pages.yml
 ├── CNAME                           # Custom domain
@@ -130,7 +131,7 @@ Use any static local web server instead of opening `index.html` directly from `f
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`. For real sign-in, register the local host in Firebase Authentication's authorised domains when appropriate and use the project's public web app configuration.
+Then open `http://localhost:8080`. For local Google sign-in testing, create a local `assets/config.js` using the public Firebase Web config (do not commit it), and register the test host in Firebase Authentication's authorised domains. This static deployment imports Firebase directly in the browser: `npm install firebase` and a bundler are **not** required for the production page. `npm run test:config` validates the deployment generator.
 
 ## Accessibility and responsible launch
 
