@@ -37,11 +37,11 @@ The application is a static HTML/CSS/JavaScript frontend hosted using GitHub Pag
 |---|---|
 | Landing page | Responsive dark-navy/lime design, animated accents and one Google entry point |
 | Single login / signup | Google-only sign-in through Firebase Authentication; no usernames or local passwords |
-| First-time onboarding | Collect name, location, optional details and job-seeker / employer role |
-| Returning users | Firebase session observation and profile lookup |
+| Consent-first onboarding | Animated, mobile-responsive role capture; separate mandatory Terms, Privacy and Data Usage acknowledgments |
+| Returning users | Firebase session, profile and current-policy agreement check before workspace access |
 | Job seekers | View open listings and apply once per job |
 | Hiring teams | Register with Google, await administrator approval, then publish and manage job listings |
-| Security rules | Source-controlled Firestore rules for profiles, jobs and applications |
+| Security rules | Versioned, immutable Google-linked agreement evidence; rule-level gates for profiles, jobs and applications |
 | Documentation | Firebase setup, GitHub Pages configuration, deployment requirements and diagrams |
 | Visual assets | Original animated SVG README hero, UI illustration and authentication flow diagram |
 
@@ -55,15 +55,29 @@ flowchart LR
   B --> C[Firebase Google Authentication]
   C --> D{Existing profile?}
   D -->|No| E[First visit: select worker or employer]
-  E --> F[Create protected user profile]
-  D -->|Yes| G[Restore existing profile]
-  F --> H[Role-specific workspace]
-  G --> H
+  E --> J[Review and accept three policies]\n  J --> F[Record immutable versioned agreement]\n  F --> K[Create protected user profile]
+  D -->|Yes| G[Restore profile and check policy acceptance]
+  K --> H[Role-specific workspace]
+  G --> L{Current agreement exists?}\n  L -->|No| J\n  L -->|Yes| H
   H --> I[Sign out]
   I --> A
 ```
 
 **One action serves both cases:** the Firebase Google provider creates the account identity on first successful access and signs in the same identity on future visits. A new user completes profile setup after that initial authentication.
+
+## Consent-first onboarding and legal-review gate
+
+The new responsive onboarding experience is an authenticated capture page following **Continue with Google**. Users choose **job seeker** or **hiring team**, enter only the required profile data, and must individually check each of three unticked acknowledgments:
+
+1. [Platform Terms of Use](legal/terms.html) — affirmative contract acceptance.
+2. [Privacy Notice](legal/privacy.html) — acknowledgment of a notice, **not** blanket consent to unrelated processing.
+3. [Data Ownership & Usage Policy](legal/data-ownership.html) — acknowledgment of content rights and the limited service licence; Dispatch does **not** acquire ownership of user content through onboarding.
+
+The client creates `agreements/{uid}/versions/2026-10-30-v1` with the authenticated Google UID/email, separate boolean acknowledgments, policy version and Firestore server timestamp. **Firestore Security Rules** validate these fields, reject client edits or deletion, and require the current version before creating profiles or accessing jobs and applications. Returning users with old profiles but without the current release must re-acknowledge before accessing the workspace. The app's privacy page clearly identifies processing purposes, rights and retention dependencies. An optional marketing opt-in is **not** bundled into signup.
+
+**Important: the three legal documents are pre-launch drafts, not approved legal instruments.** Before onboarding real people, confirm the responsible legal entity, official support/Information Officer contact, POPIA handling and cross-border safeguards, retention/deletion procedure and counsel's sign-off. Bumping the policy requires updating both `assets/consent-policy.js` and `firestore.rules`, updating legal pages, and running rule tests. Publishing the site does not publish Firestore rules.
+
+**Testing:** `npm run test:onboarding` checks onboarding content and policy version consistency; `npm run test:rules` runs security policy tests in the Firebase Firestore emulator.
 
 ## Architecture
 
@@ -120,14 +134,14 @@ The [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) action deploys the 
 .
 ├── index.html                     # Public landing, onboarding and workspace markup
 ├── assets/
-│   ├── app.js                      # Google auth, profile, jobs and applications
+│   ├── app.js                      # Google auth, agreement gating, profile and jobs\n│   ├── consent-policy.js           # Current legal release and storage path\n│   ├── onboarding.css              # Responsive animated capture interface\n│   ├── legal.css                   # Responsive policy document styling
 │   ├── config.js                   # Public Firebase web config — needs setup
 │   ├── styles.css                  # Responsive styles and motion
 │   ├── favicon.svg
 │   ├── readme-banner.svg           # Animated brand illustration
 │   ├── readme-auth-flow.svg        # Identity flow illustration
 │   └── readme-workspace.svg        # Landing page concept illustration
-├── firestore.rules                 # Firebase data-access policy
+├── legal/                         # Terms, Privacy and Data Usage policy drafts\n├── firestore.rules                 # Agreement and workspace security gates
 ├── .github/workflows/deploy-pages.yml
 ├── CNAME                           # Custom domain
 ├── LICENSE

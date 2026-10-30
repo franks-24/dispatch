@@ -1,0 +1,19 @@
+name: Onboarding and legal UI validation
+on:
+  pull_request:
+    paths: ['index.html', 'assets/**', 'legal/**', 'tests/onboarding.test.mjs', 'package.json', '.github/workflows/onboarding-ui.yml']
+  push:
+    branches: [main]
+    paths: ['index.html', 'assets/**', 'legal/**', 'tests/onboarding.test.mjs', 'package.json', '.github/workflows/onboarding-ui.yml']
+permissions:
+  contents: read
+jobs:
+  onboarding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate onboarding and current legal release
+        run: npm run test:onboarding
