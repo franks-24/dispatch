@@ -50,8 +50,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  try{
   const token=process.env.GOOGLE_OAUTH_ACCESS_TOKEN||execFileSync("gcloud",["auth","print-access-token"],{encoding:"utf8",stdio:["ignore","pipe","pipe"]}).trim();
   const result=await activateIdentity({token,rules:await readFile("firestore.rules","utf8")});
-  await writeFile("assets/config.js","// Public Firebase web settings; no private credentials.\nexport const firebaseConfig = "+JSON.stringify(result.publicConfig,null,2)+";\n");
+  await writeFile("assets/firebase-config.public.json",JSON.stringify(result.publicConfig,null,2)+"\n");
   console.log(JSON.stringify(result.report,null,2));
-  console.log("Copy the JSON object from assets/config.js into the GitHub Actions repository variable FIREBASE_WEB_CONFIG_JSON, then run Deploy Dispatch. Verify a real Google login and first/returning-user flow. Never share the access token.");
+  console.log("Publish assets/firebase-config.public.json, or copy its public JSON into the GitHub Actions variable FIREBASE_WEB_CONFIG_JSON, then run Deploy Dispatch. Verify a real Google login and first/returning-user flow. Never share the access token.");
  }catch(error){console.error(error.message||"Firebase activation failed.");process.exitCode=1}
 }
