@@ -2,9 +2,11 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {createService,createOperator,customerPath,hash} from "../service.js";
 import {memoryStore} from "./memory-store.mjs";
+import {validatePrivateBucket} from "../proof-policy.js";
 const now=Date.parse("2026-10-30T12:00:00Z");
 const acceptance={version:"delivery-approved-test",terms:true,privacy:true,ownership:true};
 const quoteBody={pickupArea:"Johannesburg",deliveryArea:"Pretoria",weightKg:1,lengthCm:20,widthCm:10,heightCm:10,service:"economy",acceptance};
+test("proof upload and download require private bucket metadata and IAM",()=>{const metadata={iamConfiguration:{publicAccessPrevention:"enforced",uniformBucketLevelAccess:{enabled:true}}};validatePrivateBucket(metadata,{bindings:[{members:["serviceAccount:delivery@example.test"]}]});assert.throws(()=>validatePrivateBucket({},{}),/not private/);for(const member of ["allUsers","allAuthenticatedUsers"])assert.throws(()=>validatePrivateBucket(metadata,{bindings:[{members:[member]}]}),/not private/);assert.throws(()=>validatePrivateBucket({iamConfiguration:{...metadata.iamConfiguration,publicAccessPrevention:"inherited"}},{}),/not private/);});
 const bookingBody=id=>({quoteId:id,pickupAddress:"1 Test Street",deliveryAddress:"2 Test Road",recipientName:"Test Customer",recipientPhone:"+27115550100",acceptance});
 export function fixture(store=memoryStore()) {
   let count=0;const uuid=()=>`record-${++count}`;
