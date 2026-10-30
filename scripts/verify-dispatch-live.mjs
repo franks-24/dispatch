@@ -16,13 +16,35 @@ report.assets=[];
 for(const path of [...new Set([...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)].map(match=>match[1]))]){
  const result=await fetch(origin+"/"+path,{signal:AbortSignal.timeout(15000)});assert.equal(result.status,200,path+" unavailable");report.assets.push({path,status:result.status});
 }
-const config=await (await fetch(origin+"/assets/config.js",{cache:"no-store"})).text();
-report.firebaseConfigured=!/firebaseConfig\s*=\s*null/.test(config);
+function parseConfig(source){
+ const value=source.match(/export const firebaseConfig\\s*=\\s*(\\{[\\s\\S]*?\\});?\\s*$/);
+ if(!value)return null;try{return JSON.parse(value[1])}catch{return null}
+}
+async function readLiveConfig(){return parseConfig(await (await fetch(origin+"/assets/config.js?verify="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(15000)})).text())}
+let liveConfig=await readLiveConfig();
+const expectedConfig=JSON.parse(await readFile("assets/firebase-config.public.json","utf8"));
+report.firebaseConfigured=!!liveConfig?.apiKey;
 if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
  const expected=await readFile("assets/app.js","utf8");let matched=false;
- for(let attempt=0;attempt<12;attempt++){const remote=await (await fetch(origin+"/assets/app.js?verify="+Date.now(),{cache:"no-store"})).text();if(remote===expected){matched=true;break}await new Promise(resolve=>setTimeout(resolve,10000))}
- assert.ok(matched,"Published identity source has not reached the custom domain");report.publishedSourceMatches=true;
+ for(let attempt=0;attempt<12;attempt++){
+  const remote=await (await fetch(origin+"/assets/app.js?verify="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(15000)})).text();
+  liveConfig=await readLiveConfig();
+  if(remote===expected&&liveConfig?.appId===expectedConfig.appId&&liveConfig?.apiKey===expectedConfig.apiKey){matched=true;break}
+  await new Promise(resolve=>setTimeout(resolve,10000))
+ }
+ assert.ok(matched,"Published identity source and public Firebase settings have not reached the custom domain");
+ report.publishedSourceMatches=true;report.firebaseConfigured=true;
 }
-await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
+// This is the same read-only project lookup used by the Firebase Web SDK to validate origins.
+const authResponse=await fetch("https://identitytoolkit.googleapis.com/v1/projects?key="+encodeURIComponent(expectedConfig.apiKey),{signal:AbortSignal.timeout(15000)});
+report.firebaseAuthHttpStatus=authResponse.status;
+if(authResponse.ok){
+ const project=await authResponse.json();
+ report.firebaseProjectNumber=project.projectId;
+ report.authorizedDomains=project.authorizedDomains||[];
+ report.customDomainAuthorized=report.authorizedDomains.includes(host);
+}else report.customDomainAuthorized=false;
+await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\\n");
 console.log(JSON.stringify(report,null,2));
 if(process.argv.includes("--require-config"))assert.ok(report.firebaseConfigured,"Firebase web settings are still missing; live Google SSO is not activated");
+if(process.argv.includes("--require-auth"))assert.ok(report.firebaseConfigured&&report.customDomainAuthorized,"The live Firebase configuration and custom auth domain must both be enabled before Google SSO acceptance");

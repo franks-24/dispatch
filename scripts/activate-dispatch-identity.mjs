@@ -6,7 +6,7 @@ export async function activateIdentity({token,rules,fetcher=fetch}){
  const project="dispatch-1491f",domain="dispatch.franks24.com";
  if(!token)throw new Error("Authenticate to the Dispatch project in Google Cloud Shell first.");
  async function call(url,method="GET",body,allow404=false){
-  const response=await fetcher(url,{method,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)});
+  const response=await fetcher(url,{method,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json","X-Goog-User-Project":project},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)});
   if(allow404&&response.status===404)return null;
   if(!response.ok)throw new Error("Firebase setup request failed (HTTP "+response.status+"). Check the signed-in account's permission for the Dispatch project.");
   return response.json();
