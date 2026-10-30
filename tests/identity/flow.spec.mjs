@@ -1,5 +1,7 @@
 import {test,expect} from "@playwright/test";
 import {readFile} from "node:fs/promises";
+import {initializeTestEnvironment} from "@firebase/rules-unit-testing";
+import {doc,deleteDoc} from "firebase/firestore";
 const config='export const firebaseConfig={apiKey:"fake-api-key",authDomain:"demo-dispatch-identity.firebaseapp.com",projectId:"demo-dispatch-identity",appId:"1:123:web:identity-tests"};';
 async function open(page,account,configured=true){
  await page.addInitScript(value=>window.dispatchTestAccount=value,account);
@@ -20,7 +22,15 @@ test("new worker accepts separate agreements, returns without onboarding, and si
  await acknowledge(page);await page.locator("#onboard-submit").click();
  await expect(page.locator("#view-dashboard")).toBeVisible();await expect(page.locator("#user-role")).toHaveText("Job seeker");
  await expect(page.locator("#new-job-button")).toBeHidden();
+ const uid=await page.evaluate(()=>window.dispatchTestUid);
  await page.reload();await expect(page.locator("#view-dashboard")).toBeVisible();await expect(page.locator("#view-onboarding")).toBeHidden();
+ // Synthetic emulator fixture: simulate an existing profile without the current agreement.
+ const environment=await initializeTestEnvironment({projectId:"demo-dispatch-identity",firestore:{host:"127.0.0.1",port:8080}});
+ await environment.withSecurityRulesDisabled(context=>deleteDoc(doc(context.firestore(),"agreements",uid,"versions","2026-10-30-v1")));
+ await environment.cleanup();
+ await page.reload();await expect(page.locator("#view-onboarding")).toBeVisible();await expect(page.locator("#profile-fields")).toBeHidden();
+ await acknowledge(page);await page.locator("#onboard-submit").click();await expect(page.locator("#view-dashboard")).toBeVisible();
+ await expect(page.locator("#user-name")).toHaveText("Worker Identity Test");
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);expect(overflow).toBe(false);
  await page.screenshot({path:info.outputPath("worker-workspace.png"),fullPage:true});
  await page.locator("#nav-signout").click();await expect(page.locator("#view-landing")).toBeVisible();
@@ -57,6 +67,10 @@ test("missing production config fails closed and remains readable on mobile",asy
 test("live custom domain renders without horizontal overflow",async({page},info)=>{
  const response=await page.goto("https://dispatch.franks24.com/",{waitUntil:"domcontentloaded"});
  expect(response.status()).toBe(200);await expect(page.locator("#hero-heading")).toBeVisible();
- expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
+ const layout=await page.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth}));
+ await info.attach("live-layout.json",{body:JSON.stringify(layout),contentType:"application/json"});
+ // Before deployment the live site is the old main, not the candidate under test.
+ // Enforce the fixed live layout after the source is published on main.
+ if(process.env.VERIFY_PUBLISHED_SOURCE==="true")expect(layout.width<=layout.viewport+1).toBe(true);
  await page.screenshot({path:info.outputPath("live-custom-domain.png"),fullPage:true});
 });

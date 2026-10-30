@@ -15,7 +15,7 @@ export async function connectFirebase(){
    const encode=value=>btoa(JSON.stringify(value)).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
    const token=encode({alg:"none",typ:"JWT"})+"."+encode({sub:account,email:account+"@example.test",email_verified:true,name:"Identity Test",iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600})+".";
    const result=await authSdk.signInWithCredential(auth,authSdk.GoogleAuthProvider.credential(token));
-   return result;
+   window.dispatchTestUid=result.user.uid;return result;
   }
  };
  return {auth,db,api};
