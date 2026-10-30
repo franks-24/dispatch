@@ -1,7 +1,6 @@
 import {readFile} from "node:fs/promises";
 import {randomUUID} from "node:crypto";
 import {getAuth} from "firebase-admin/auth";
-import {getStorage} from "firebase-admin/storage";
 import {createRuntime} from "./runtime.js";
 import {createOperator,hash} from "./service.js";
 
@@ -20,7 +19,7 @@ if(command==="attach-proof"){
   const bytes=await readFile(payload.file);
   if(bytes.length>10*1024*1024||bytes.subarray(0,5).toString()!=="%PDF-")throw new Error("A PDF up to 10 MB is required.");
   const path=`delivery-proofs/${hash(uid)}/${id}/${randomUUID()}.pdf`;
-  const file=getStorage(runtime.app).bucket(process.env.DELIVERY_PROOF_BUCKET).file(path);
+  const file=(await runtime.proofBucket()).file(path);
   await file.save(bytes,{resumable:false,validation:"crc32c",preconditionOpts:{ifGenerationMatch:0},metadata:{contentType:"application/pdf",cacheControl:"private, no-store"}});
   const [metadata]=await file.getMetadata();
   // A failed metadata transaction leaves an unreferenced private object; never a false delivery.
