@@ -40,7 +40,7 @@ The application is a static HTML/CSS/JavaScript frontend hosted using GitHub Pag
 | First-time onboarding | Collect name, location, optional details and job-seeker / employer role |
 | Returning users | Firebase session observation and profile lookup |
 | Job seekers | View open listings and apply once per job |
-| Hiring teams | Publish job listings and view own postings |
+| Hiring teams | Register with Google, await administrator approval, then publish and manage job listings |
 | Security rules | Source-controlled Firestore rules for profiles, jobs and applications |
 | Documentation | Firebase setup, GitHub Pages configuration, deployment requirements and diagrams |
 | Visual assets | Original animated SVG README hero, UI illustration and authentication flow diagram |
@@ -89,10 +89,22 @@ flowchart TD
 2. Register a **Web app** under project settings; copy its **public Firebase web config** into [`assets/config.js`](assets/config.js). Keep service-account credentials private.
 3. Under **Authentication → Sign-in method**, enable **Google** and select a support email.
 4. Under **Authentication → Settings → Authorized domains**, authorise **`dispatch.franks24.com`**. Add the GitHub Pages fallback domain only if you intend to use it.
-5. Create the production Firestore database and publish the reviewed [`firestore.rules`](firestore.rules). The website deployment does not deploy Firestore rules.
+5. Create the production Firestore database and publish the reviewed [`firestore.rules`](firestore.rules). The website deployment does not deploy Firestore rules. **Administrator verification is mandatory** for employer job publishing; approval records are maintained outside the client in `employerApprovals/{uid}`.
 6. Test first-time Google onboarding, returning Google login, sign-out, job-seeker access and employer access. Confirm unauthenticated requests are denied.
 
 Official references: [Google sign-in with Firebase](https://firebase.google.com/docs/auth/web/google-signin) · [Firebase authorised domains](https://firebase.google.com/docs/auth/web/redirect-best-practices) · [Cloud Firestore security rules](https://firebase.google.com/docs/firestore/security/get-started).
+
+### Employer verification (Firebase Spark)
+
+Any Google user can onboard as a job seeker or an employer. Employer accounts **cannot publish jobs until a Dispatch administrator verifies the organisation**. The employer sees a pending-verification notice with a **Check status** action. Firestore Security Rules enforce the restriction even for a modified or malicious browser client.
+
+Approvals are held in `employerApprovals/{firebaseAuthUid}`, separate from self-managed profiles. Only privileged Firebase administrators can write them; browser users can read their own status. To approve an employer, confirm the organisation's legitimacy, then create/update the approval document with `status: "approved"` using Firestore Console or Admin SDK. `rejected`, `suspended` or missing approval blocks publishing. Revoked employers may close existing jobs but not reopen them.
+
+**Launch checklist and admin procedure:** [Firebase setup and employer approval](docs/firebase-setup.md).
+
+**Rules tests:** `npm install && npm run test:rules` runs the Firestore emulator tests, including self-approval denial, unverified publishing denial, verified publishing, revoked publishing and worker restrictions. Test workflow runs in GitHub Actions on relevant PRs.
+
+The public Firebase Web SDK settings in `assets/config.js` **must still be supplied**. This pull request does **not** activate live authentication or deploy security rules to `dispatch-1491f` automatically.
 
 ### GitHub Pages publishing
 
