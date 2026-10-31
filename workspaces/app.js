@@ -64,7 +64,7 @@ async function load(){
    root.append(el("p","Use these controls only when safely parked. Offers show areas and agreed fees; recipient details appear after you accept."));
    if(!jobs.length)root.append(el("p","No assigned offers or trips."));
    for(const job of jobs){
-    const c=card(root,job.pickupArea+"  "+job.deliveryArea,job.status);c.append(el("p",money(job.feeMinor),"money"),el("small","Reference "+job.reference));
+    const c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);c.append(el("p",money(job.feeMinor),"money"),el("small","Reference "+job.reference));
     if(job.status==="offered")button("Accept offer and agreed fee terms",async()=>{await request(prefix+"/jobs/"+job.id+"/accept",{feePolicyVersion:operationsConfig.policyVersion});await load();},c);
     if(["accepted","collected","in_transit","out_for_delivery","exception"].includes(job.status))button("Open trip",()=>openTrip(job.id),c);
    }
@@ -79,7 +79,7 @@ async function load(){
     field(f,"Vehicle","vehicle",{options:["bicycle","motorbike","car","bakkie","van"].map(v=>[v,v])});field(f,"Approved service region","region");
    },"Save application for review",async(_,f)=>{await request(prefix+"/applications",values(f,["name","email","vehicle","region"]));await load();});
    for(const application of items){
-    const c=card(root,application.name,application.status);c.append(el("p",application.email+" � "+application.vehicle+" � "+application.region));
+    const c=card(root,application.name,application.status);c.append(el("p",application.email+" · "+application.vehicle+" · "+application.region));
     if(application.status!=="in_review")continue;
     const detail=el("details"),summary=el("summary","Review mandatory checks");detail.append(summary);c.append(detail);
     form("Human approval",detail,f=>{
@@ -102,7 +102,7 @@ async function load(){
     });
    }
   }else if(collection==="drivers"){
-   for(const driver of items){const c=card(root,driver.name,driver.status);c.append(el("p",driver.region+" � "+driver.vehicle),el("p","Approval expires "+driver.validUntil));
+   for(const driver of items){const c=card(root,driver.name,driver.status);c.append(el("p",driver.region+" · "+driver.vehicle),el("p","Approval expires "+driver.validUntil));
     const performance=el("p","Performance uses recorded events, with denominators; no automatic driver rating.");c.append(performance);
     for(const days of [7,30,90])button(days+" day performance",async()=>{
      const result=await request(prefix+"/drivers/"+driver.id+"/performance?days="+days);
@@ -112,30 +112,30 @@ async function load(){
    }
   }else if(collection==="quotes"){
    root.append(el("p","Enter an actual inclusive carrier price only after confirming service coverage. No automatic rates or customer payments are created."));
-   for(const quote of items){const c=card(root,quote.pickupArea+"  "+quote.deliveryArea,quote.status);c.append(el("p",quote.weightKg+" kg � "+quote.service));
+   for(const quote of items){const c=card(root,quote.pickupArea+" → "+quote.deliveryArea,quote.status);c.append(el("p",quote.weightKg+" kg · "+quote.service));
     if(quote.status==="pending")form("Issue verified quote",c,f=>{
      field(f,"Inclusive amount in ZAR","total",{type:"number"});field(f,"Quote expires","expiresAt",{type:"datetime-local"});field(f,"Private carrier rate evidence reference","rateEvidenceRef");field(f,"Coverage and all required charges verified","coverageApproved",{type:"checkbox"});
     },"Issue quote",async(_,f)=>{await request(prefix+"/quotes/"+quote.id+"/issue",{totalMinor:Math.round(Number(f.get("total"))*100),expiresAt:new Date(f.get("expiresAt")).toISOString(),rateEvidenceRef:f.get("rateEvidenceRef"),coverageApproved:f.get("coverageApproved")==="yes"});await load();});
    }
   }else if(collection==="shipments"){
    const drivers=await request(prefix+"/drivers?limit=100");if(version!==epoch)return;
-   for(const shipment of items){const c=card(root,shipment.pickupArea+"  "+shipment.deliveryArea,shipment.status);c.append(el("p","Reference "+shipment.reference));
+   for(const shipment of items){const c=card(root,shipment.pickupArea+" → "+shipment.deliveryArea,shipment.status);c.append(el("p","Reference "+shipment.reference));
     if(shipment.status==="requested")form("Record actual carrier booking",c,f=>{field(f,"Carrier booking reference","carrierReference");field(f,"Carrier has confirmed this booking","bookingVerified",{type:"checkbox"});},"Confirm booked collection",async(_,f)=>{await request(prefix+"/shipments/"+shipment.id+"/confirm",{carrierReference:f.get("carrierReference"),bookingVerified:f.get("bookingVerified")==="yes"});await load();});
     if(shipment.status==="confirmed")form("Offer to approved driver",c,f=>{
-     field(f,"Driver","driverId",{options:[["","Choose an approved driver"],...drivers.items.filter(d=>d.status==="approved").map(d=>[d.id,d.name+" � "+d.region])]});
+     field(f,"Driver","driverId",{options:[["","Choose an approved driver"],...drivers.items.filter(d=>d.status==="approved").map(d=>[d.id,d.name+" · "+d.region])]});
      field(f,"Agreed driver fee in ZAR","fee",{type:"number"});field(f,"Agreed delivery due time","dueAt",{type:"datetime-local"});
     },"Send driver offer",async(_,f)=>{await request(prefix+"/jobs",{customerUid:shipment.customerUid,shipmentId:shipment.shipmentId,driverId:f.get("driverId"),feeMinor:Math.round(Number(f.get("fee"))*100),feePolicyVersion:operationsConfig.policyVersion,dueAt:new Date(f.get("dueAt")).toISOString()});await load();});
    }
   }else if(collection==="jobs"){
    root.append(el("p","These are recorded events for this page of jobs. No estimated position, fabricated ETA or driver rating is shown."));
-   for(const job of items){const c=card(root,job.pickupArea+"  "+job.deliveryArea,job.status);c.append(el("p","Reference "+job.reference),el("p","Agreed fee "+money(job.feeMinor)));
-    if(job.location)c.append(el("p",(job.location.stale?"Location stale":"Location recently reported")+" � "+job.location.lastSeen+" � accuracy "+job.location.accuracy+" m"));
+   for(const job of items){const c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);c.append(el("p","Reference "+job.reference),el("p","Agreed fee "+money(job.feeMinor)));
+    if(job.location)c.append(el("p",(job.location.stale?"Location stale":"Location recently reported")+" · "+job.location.lastSeen+" · accuracy "+job.location.accuracy+" m"));
     if(["accepted","collected","in_transit","out_for_delivery","exception"].includes(job.status))button("Open shipment messages",()=>openTrip(job.id),c);
     if(job.status==="delivered"&&session.canReconcile)form("Record an external payment",c,f=>{field(f,"Bank payment reference","bankReference");field(f,"Private settlement evidence reference","evidenceRef");},"Submit for independent reconciliation",async(_,f)=>{await request(prefix+"/settlements",{jobId:job.id,...values(f,["bankReference","evidenceRef"])});await load();});
    }
   }else if(collection==="privacy"){
    root.append(el("p","These requests require a human privacy review, identity checks and the applicable retention process. Listing a request does not mean export or erasure is complete."));
-   for(const record of items){const c=card(root,record.type,record.status);c.append(el("p",record.details),el("small","Request "+record.id+" � "+record.createdAt));}
+   for(const record of items){const c=card(root,record.type,record.status);c.append(el("p",record.details),el("small","Request "+record.id+" · "+record.createdAt));}
   }else if(collection==="settlements"){
    root.append(el("p","Verify payment evidence outside this application. A second authorized finance reviewer must reconcile each entry. This action does not make a bank transfer."));
    for(const record of items){const c=card(root,money(record.amountMinor),record.status);c.append(el("p","Bank reference "+record.bankReference),el("p","Evidence "+record.evidenceRef));
@@ -147,7 +147,7 @@ async function load(){
 async function openTrip(id){
  const version=epoch;stopGPS();const data=await request(prefix+"/jobs/"+id);if(version!==epoch)return;
  const root=$("content");root.replaceChildren();button("Back to jobs",()=>load(),root);
- const job=data.job,c=card(root,job.pickupArea+"  "+job.deliveryArea,job.status);
+ const job=data.job,c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);
  if(data.delivery)for(const [key,value]of Object.entries(data.delivery))c.append(el("p",key.replaceAll(/([A-Z])/g," $1")+": "+(value||"")));
  if(!["accepted","collected","in_transit","out_for_delivery","exception"].includes(job.status))return;
  if(mode==="driver"){
@@ -174,7 +174,7 @@ async function openTrip(id){
  }
  const inbox=el("section",undefined,"card");inbox.append(el("h3","Shipment messages"),el("p","Send messages only when safely parked. Message storage does not prove that the recipient has read it."));
  const messages=await request(prefix+"/jobs/"+id+"/messages");if(version!==epoch)return;
- for(const msg of [...messages.items].reverse())inbox.append(el("p",msg.role+" � "+msg.createdAt+"\n"+msg.text,"message"));
+ for(const msg of [...messages.items].reverse())inbox.append(el("p",msg.role+" · "+msg.createdAt+"\n"+msg.text,"message"));
  form("Send a shipment message",inbox,f=>field(f,"Message","text",{type:"textarea"}),"Send message",async(_,f)=>{await request(prefix+"/jobs/"+id+"/messages",{text:f.get("text")});await openTrip(id);});root.append(inbox);
 }
 function tabs(){
@@ -211,3 +211,4 @@ async function start(){
  }catch{note("Google identity is unavailable. Try again when connected.");}
 }
 start();
+

@@ -58,7 +58,7 @@ function recommend(){
  for(const item of matches){
   const button=document.createElement("button");button.type="button";
   button.className="product-suggestion";
-  button.textContent=item.name+" � "+(item.sku||item.barcode||"Previous item");
+  button.textContent=item.name+" · "+(item.sku||item.barcode||"Previous item");
   button.addEventListener("click",()=>{
    $("item-name").value=item.name;
    $("item-sku").value=item.sku||"";
@@ -82,10 +82,10 @@ function render(){
  }
  for(const item of shown){
   const article=document.createElement("article");article.className="inventory-record";
-  const heading=document.createElement("strong");heading.textContent=item.name+" � "+item.tracking;
+  const heading=document.createElement("strong");heading.textContent=item.name+" · "+item.tracking;
   const details=document.createElement("p");
-  details.textContent="SKU: "+(item.sku||"-")+" � Barcode: "+(item.barcode||"-")+
-   " � Qty: "+item.quantity+" � "+item.status;
+  details.textContent="SKU: "+(item.sku||"—")+" · Barcode: "+(item.barcode||"—")+
+   " · Qty: "+item.quantity+" · "+item.status;
   article.append(heading,details);
   const actions=document.createElement("div");actions.className="inventory-row-actions";
   const next=nextState[item.status];
@@ -258,3 +258,4 @@ $("inventory-form").addEventListener("submit",async event=>{
  finally{uploading=false;$("inventory-save").disabled=false;}
 });
 window.addEventListener("pagehide",stopScan);
+

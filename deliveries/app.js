@@ -15,7 +15,7 @@ function syncControls() {
   for (const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","profile-fields","privacy-fields","refresh"]) $(id).disabled = !ready();
   $("login").hidden = Boolean(user); $("logout").hidden = !user;
   $("identity").textContent = user ? `Signed in as ${user.email || "Google user"}.` : "Sign in to access your quotes and private shipment history.";
-  $("availability").textContent = !config.enabled || !config.policiesApproved ? "Preview - delivery requests are not open yet. No bookings or payments are accepted." : "Request a quote to begin. Collection is subject to booking confirmation and route availability.";
+  $("availability").textContent = !config.enabled || !config.policiesApproved ? "Preview — delivery requests are not open yet. No bookings or payments are accepted." : "Request a quote to begin. Collection is subject to booking confirmation and route availability.";
 }
 function clearPrivate() {
   epoch++; roleResolved=!dispatcherConfig.enabled; quotes = []; attempts.clear();
@@ -37,17 +37,17 @@ function quoteOptions() {
   const select=$("quote-select"); const previous=select.value; select.replaceChildren();
   const available=quotes.filter(q=>bookable(q));
   const first=node("option",available.length ? "Select an issued quote" : "No current quotes"); first.value="";select.append(first);
-  for(const q of available){const option=node("option",`${q.id} � ${money(q)} � expires ${new Date(q.expiresAt).toLocaleString("en-ZA")}`);option.value=q.id;select.append(option);}
+  for(const q of available){const option=node("option",`${q.id} · ${money(q)} · expires ${new Date(q.expiresAt).toLocaleString("en-ZA")}`);option.value=q.id;select.append(option);}
   select.value=available.some(q=>q.id===previous)?previous:"";
 }
-function quoteCard(q) {const row=node("article","","shipment");row.append(node("h4",q.id),node("p",`${money(q)} � ${q.status === "quoted" ? (bookable(q) ? "Ready to book" : "Quote expired or unavailable") : q.status==="booked"?"Booked":"Awaiting review"}`));return row;}
+function quoteCard(q) {const row=node("article","","shipment");row.append(node("h4",q.id),node("p",`${money(q)} · ${q.status === "quoted" ? (bookable(q) ? "Ready to book" : "Quote expired or unavailable") : q.status==="booked"?"Booked":"Awaiting review"}`));return row;}
 function shipmentCard(shipment) {
   const card=node("article","","shipment");
   card.append(node("h3",shipment.reference || shipment.id || "Shipment"),node("span",statuses[shipment.status] || "Status unavailable","badge"));
-  if (shipment.pickupArea && shipment.deliveryArea) card.append(node("p",`${shipment.pickupArea}  ${shipment.deliveryArea}`));
+  if (shipment.pickupArea && shipment.deliveryArea) card.append(node("p",`${shipment.pickupArea} → ${shipment.deliveryArea}`));
   if (shipment.updatedAt && Number.isFinite(Date.parse(shipment.updatedAt))) card.append(node("p",`Updated ${new Date(shipment.updatedAt).toLocaleString("en-ZA")}`));
   if (shipment.status === "delivered" && shipment.proofAvailable === true) {
-    const button=node("button","Download proof of delivery ");button.type="button";
+    const button=node("button","Download proof of delivery ↓");button.type="button";
     button.addEventListener("click",async()=>{const version=epoch;button.disabled=true;try{const blob=await api.proof(shipment.id);if(version!==epoch)return;const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="Franks24-proof-of-delivery.pdf";link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(error){if(version===epoch)message(error.message);}finally{if(version===epoch)button.disabled=false;}});
     card.append(button);
   } else card.append(node("p","Proof of delivery has not been recorded."));
@@ -56,7 +56,7 @@ function shipmentCard(shipment) {
 async function refresh() {
   if(!ready())return;
   const version=epoch;
-  $("refresh").disabled=true;$("history-note").textContent="Loading your workspace.";
+  $("refresh").disabled=true;$("history-note").textContent="Loading your workspace…";
   try {
     const [quotePage, shipmentPage,customer]=await Promise.all([api.quotes(),api.shipments(),api.profile()]);
     if(version!==epoch)return;
@@ -98,7 +98,7 @@ submit("quote-form",quoteInput,(body,consent,key)=>api.quote(body,consent,key),r
 submit("booking-form",data=>bookingInput(data,quotes.find(q=>q.id===data.quoteId)),(body,consent,key)=>api.book(body,consent,key),result=>{$("booking-form").reset();message(result.status==="confirmed" ? `Booking confirmed: ${result.reference || result.id}.` : `Booking request received${result.id ? `: ${result.id}` : ""}. Await confirmation before handing over your parcel.`);});
 $("tracking-form").addEventListener("submit",async event=>{
   event.preventDefault();if(!ready())return;const version=epoch;const form=event.currentTarget;const button=form.querySelector("button");button.disabled=true;$("tracking-result").replaceChildren();
-  try{const shipment=await api.track(String(new FormData(form).get("reference")).trim());if(version!==epoch)return;const card=shipmentCard(shipment);if(Array.isArray(shipment.events)){const timeline=node("ol","","timeline");for(const event of shipment.events){const timestamp=Number.isFinite(Date.parse(event.at))?new Date(event.at).toLocaleString("en-ZA"):"Time unavailable";timeline.append(node("li",`${statuses[event.status] || "Status update"} � ${timestamp}${event.description ? ` - ${event.description}` : ""}`));}card.append(timeline);}$("tracking-result").append(card);}
+  try{const shipment=await api.track(String(new FormData(form).get("reference")).trim());if(version!==epoch)return;const card=shipmentCard(shipment);if(Array.isArray(shipment.events)){const timeline=node("ol","","timeline");for(const event of shipment.events){const timestamp=Number.isFinite(Date.parse(event.at))?new Date(event.at).toLocaleString("en-ZA"):"Time unavailable";timeline.append(node("li",`${statuses[event.status] || "Status update"} · ${timestamp}${event.description ? ` — ${event.description}` : ""}`));}card.append(timeline);}$("tracking-result").append(card);}
   catch(error){if(version===epoch)message(error.message);}finally{if(version===epoch)button.disabled=false;}
 });
 $("refresh").addEventListener("click",refresh);
@@ -137,3 +137,4 @@ async function initialize() {
   }catch{message("Google sign-in is temporarily unavailable. Please try again later.");}
 }
 initialize();
+

@@ -1,4 +1,4 @@
-# Franks24 Dispatch build and acceptance - 31 October 2026
+# Franks24 Dispatch build and acceptance — 31 October 2026
 
 Code completion, CI success, public preview publication and live operational acceptance are separate milestones.
 
@@ -69,3 +69,4 @@ The runtime independently checks live database and private proof-bucket metadata
 GitHub connector access works. Direct Git/npm network access is unavailable, no authenticated Firebase CLI/MCP is exposed, and browser attachment to the existing Google Cloud session failed. Firebase settings, database/bucket IAM, Directory delegation and real-account acceptance were not changed or verified. The earlier user confirmation of Blaze is retained; billing was not changed again.
 
 The public preview is not a production courier launch.
+
