@@ -62,3 +62,14 @@ test("switching away from inventory cancels a pending camera request before atta
  await page.getByRole("tab",{name:"WhatsApp inbox",exact:true}).click();await page.evaluate(()=>window.__resolveCamera());
  await expect.poll(()=>page.evaluate(()=>window.__scanStopped)).toBe(1);await expect(page.locator("#barcode-video")).toHaveJSProperty("hidden",true);await expect(page.locator("#barcode-video")).toHaveJSProperty("srcObject",null);
 });
+
+test("public dispatcher remains security-paused after client script initializes",async({page})=>{
+ await page.goto("/dispatcher/");
+ const login=page.locator("#staff-login");
+ await expect(login).toBeDisabled();
+ await expect(login).toHaveText("Access paused — security review");
+ await expect(page.locator("#staff-status")).toContainText("No sign-in or credential entry is permitted");
+ await expect(page.locator("#staff-workspace")).toBeHidden();
+ await expect(page.locator("#staff-logout")).toBeHidden();
+ await expect(page.locator("#staff-status")).not.toContainText("Choose your own approved Franks24 Google Workspace account");
+});
