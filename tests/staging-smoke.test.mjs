@@ -46,7 +46,7 @@ test("a deployed backend that returns 503 rather than enforcing a session is not
 });
 test("approved and unauthorized identities must pass independent role checks",async()=>{
  const report=await checkStaging({origin,fetcher:fakeFetch(),
-  approvedDispatcherToken:"approved",deniedDispatcherToken:"unauthorized"});
+  approvedDispatcherToken:"approved",deniedDispatcherToken:"unauthorized",approvedHost:"franks24-acceptance.web.app"});
  assert.equal(report.identity,"approved-and-denied-verified");
 });
 test("a staged backend that authorizes an unauthorized account fails acceptance",async()=>{
@@ -56,5 +56,5 @@ test("a staged backend that authorizes an unauthorized account fails acceptance"
   return fakeFetch()(url,options);
  };
  await assert.rejects(checkStaging({origin,fetcher:permissive,
-  approvedDispatcherToken:"approved",deniedDispatcherToken:"unauthorized"}),/Unauthorized identity must be rejected/);
+  approvedDispatcherToken:"approved",deniedDispatcherToken:"unauthorized",approvedHost:"franks24-acceptance.web.app"}),/Unauthorized identity must be rejected/);
 });
