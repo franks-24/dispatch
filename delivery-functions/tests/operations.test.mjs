@@ -163,3 +163,29 @@ test("customer request flows through staff pricing, booking confirmation and dri
  assert.equal(offered.status,201);
  const jobs=await s.call("driver","/api/driver/jobs");assert.equal(jobs.body.items[0].id,offered.body.job.id);
 });
+test("fresh reviewed evidence renews an expired or suspended identity without deleting history",async()=>{
+ const s=setup();s.seedDriver();
+ const ledgerPath="dispatchDrivers/"+hash("driver")+"/ledger/previous";
+ s.store.data.set(ledgerPath,{id:"previous",type:"earning",amountMinor:10000,createdAt:new Date(start).toISOString()});
+ await s.call("reviewer","/api/operations/drivers/"+hash("driver")+"/suspend",{reason:"Evidence renewal required"});
+ const created=await s.call("reviewer","/api/operations/applications",{name:"Renewed driver",email:"driver@test.invalid",vehicle:"car",region:"Johannesburg"});
+ const result=await s.call("reviewer","/api/operations/applications/"+created.body.application.id+"/approve",{driverUid:"driver",checks:s.checks(),hold:false,prdpRequired:false});
+ assert.equal(result.status,201);assert.equal((await s.call("driver","/api/driver/session")).status,200);
+ assert.equal((await s.store.get(ledgerPath)).amountMinor,10000);
+ assert.equal((await s.store.get("dispatchDrivers/"+hash("driver"))).renewedAt,new Date(start).toISOString());
+});
+test("cancelled carrier bookings cannot be accepted or expose active recipient data",async()=>{
+ const s=setup(),id=(await s.offer()).body.job.id;
+ const {createOperator}=await import("../service.js"),operator=createOperator({store:s.store,clock:()=>start});
+ await operator.advance("customer","shipment",{status:"cancelled",description:"Carrier cancelled collection",operator:"authorized-operator"});
+ assert.equal((await s.call("driver",driverJob(id,"accept"),{feePolicyVersion:"driver-policy-1"})).status,409);
+ assert.equal((await s.call("driver",driverJob(id))).body.delivery,undefined);
+});
+test("older shipment instructions remain accessible through message cursor pagination",async()=>{
+ const s=setup(),id=(await s.offer()).body.job.id;
+ await s.call("driver",driverJob(id,"accept"),{feePolicyVersion:"driver-policy-1"});
+ for(let i=0;i<31;i++)assert.equal((await s.call("driver",driverJob(id,"messages"),{text:"Instruction "+i})).status,201);
+ const first=await s.call("driver",driverJob(id,"messages"));assert.equal(first.body.items.length,30);assert.ok(first.body.nextCursor);
+ const second=await s.call("driver",driverJob(id,"messages")+"?cursor="+first.body.nextCursor);assert.equal(second.body.items.length,1);assert.equal(second.body.nextCursor,null);
+ assert.equal(new Set([...first.body.items,...second.body.items].map(m=>m.id)).size,31);
+});

@@ -47,7 +47,13 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
   if(actor.staff)return;
   const driver=await tx.get(driverPath(actor.uid));approved(driver);
   requireValue(driver.email===actor.email,403,"Driver identity changed.");
-  if(jobId){const job=await tx.get(jobPath(jobId));requireValue(job?.driverId===hash(actor.uid),404,"No matching assignment.");}
+  if(jobId){
+   const job=await tx.get(jobPath(jobId));requireValue(job?.driverId===hash(actor.uid),404,"No matching assignment.");
+   if(activeStatuses.includes(job.status)){
+    const shipment=await tx.get(customerPath(job.customerUid)+"/shipments/"+job.shipmentId);
+    requireValue(shipment&&shipment.status===(job.status==="accepted"?"confirmed":job.status),409,"Shipment is no longer active; request dispatcher review.");
+   }
+  }
  }
  async function mutate(actor,route,key,body,work,jobId){
   requireValue(id(key)&&key.length>=8,400,"An idempotency key is required.");
@@ -157,12 +163,12 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
    const applicationId=match[1];
    return write(async(tx,at)=>{
     const application=await tx.get("dispatchDriverApplications/"+applicationId),prior=await tx.get(driverPath(body.driverUid));
-    requireValue(application?.status==="in_review"&&!prior,409,"Application is unavailable or driver identity already linked.");
+    requireValue(application?.status==="in_review"&&(!prior||prior.email===application.email&&["approved","suspended"].includes(prior.status)),409,"Application is unavailable or identity needs independent review.");
     requireValue(user.email?.toLowerCase()===application.email,400,"Driver identity does not match the reviewed application.");
     const validUntil=validateVetting(body.checks,{vehicle:application.vehicle,prdpRequired:body.prdpRequired,clock});
-    const driver={id:hash(body.driverUid),uid:body.driverUid,name:application.name,email:application.email,vehicle:application.vehicle,region:application.region,status:"approved",validUntil,createdAt:at,approvedBy:actor.uid,applicationId};
+    const driver={id:hash(body.driverUid),uid:body.driverUid,name:application.name,email:application.email,vehicle:application.vehicle,region:application.region,status:"approved",validUntil,createdAt:prior?.createdAt||at,approvedBy:actor.uid,applicationId,...(prior?{renewedAt:at,previousApplicationId:prior.applicationId||"prior-approved-record"}:{})};
     tx.set("dispatchDriverApplications/"+applicationId,{...application,status:"approved",checks:body.checks,approvedAt:at,approvedBy:actor.uid,driverId:driver.id});
-    tx.create(driverPath(body.driverUid),driver);
+    if(prior)tx.set(driverPath(body.driverUid),driver);else tx.create(driverPath(body.driverUid),driver);
     return {driver:{id:driver.id,status:driver.status,validUntil}};
    });
   }
@@ -228,6 +234,8 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
     requireValue(body.feePolicyVersion===policyVersion,400,"Accept the current fee policy.");
     return write(async(tx,at)=>{
      const current=await tx.get(path);requireValue(current.status==="offered",409,"Offer is no longer available.");
+     const shipment=await tx.get(shipmentPath);
+     requireValue(shipment?.status==="confirmed"&&shipment.carrierReference,409,"Shipment is no longer eligible for acceptance.");
      const dayMetric=await tx.get(metricPath(current.driverId,at));
      const updated={...current,status:"accepted",acceptedAt:at,updatedAt:at};
      tx.set(path,updated);tx.set("dispatchShipmentQueue/"+hash(current.customerUid+":"+current.shipmentId),queueEntry(updated,"accepted",at));tx.set(metricPath(current.driverId,at),metric(dayMetric,{accepted:1,acceptanceMs:Math.max(0,Date.parse(at)-Date.parse(current.offeredAt||current.createdAt))}));return {job:jobView(updated)};

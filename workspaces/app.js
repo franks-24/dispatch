@@ -180,7 +180,17 @@ async function openTrip(id){
  }
  const inbox=el("section",undefined,"card");inbox.append(el("h3","Shipment messages"),el("p","Send messages only when safely parked. Message storage does not prove that the recipient has read it."));
  const messages=await request(prefix+"/jobs/"+id+"/messages");if(version!==epoch)return;
- for(const msg of [...messages.items].reverse())inbox.append(el("p",msg.role+" · "+msg.createdAt+"\n"+msg.text,"message"));
+ const history=el("div");
+ const rows=page=>[...page.items].reverse().map(msg=>el("p",msg.role+" · "+msg.createdAt+"\n"+msg.text,"message"));
+ history.append(...rows(messages));inbox.append(history);
+ let messageCursor=messages.nextCursor||null;
+ if(messageCursor){
+  const older=button("Load older messages",async()=>{
+   const page=await request(prefix+"/jobs/"+id+"/messages?cursor="+encodeURIComponent(messageCursor));
+   if(version!==epoch)return;
+   history.prepend(...rows(page));messageCursor=page.nextCursor||null;older.hidden=!messageCursor;
+  },inbox);
+ }
  form("Send a shipment message",inbox,f=>field(f,"Message","text",{type:"textarea"}),"Send message",async(_,f)=>{await request(prefix+"/jobs/"+id+"/messages",{text:f.get("text")});await openTrip(id);});root.append(inbox);
 }
 function tabs(){
