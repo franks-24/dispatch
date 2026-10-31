@@ -13,7 +13,18 @@ test("public Franks24 Dispatch landing has delivery navigation and no recruitmen
 test("delivery preview cannot accept live quote or booking submissions",async({page},info)=>{
  await page.goto("/deliveries/",{waitUntil:"domcontentloaded"});
  await expect(page.locator("#availability")).toContainText("not open yet");
- for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields"])await expect(page.locator("#"+id)).toBeDisabled();
+ // FIELDSET has a disabled content attribute, but Playwright's isEnabled()
+ // matcher applies to actionable form controls. Check both the gate attribute
+ // and its actual descendant controls instead of asserting on the container.
+ for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields"]){
+  const fieldset=page.locator("#"+id);
+  await expect(fieldset).toHaveAttribute("disabled","");
+  await expect(fieldset.locator("input, select, textarea, button").first()).toBeDisabled();
+ }
+ // None of the customer preview's forms may submit before activation.
+ for(const id of ["quote-form","booking-form","tracking-form"]){
+  await expect(page.locator("#"+id+" button[type=submit]")).toBeDisabled();
+ }
  await expect(page.locator("header .brand")).toContainText("Franks24");
  await expect(page.locator("footer")).not.toContainText("work & hiring");
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
