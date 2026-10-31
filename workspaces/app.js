@@ -50,11 +50,38 @@ async function list(name,render,cursor=""){
  const page=await request(prefix+"/"+name+"?limit=30"+(cursor?"&cursor="+encodeURIComponent(cursor):""));
  if(version!==epoch||view!==viewVersion)return;
  if(!Array.isArray(page.items))throw Error("The workspace returned an invalid record list. Refresh to try again.");
- const root=el("div");await render(root,page.items);
+ const records=el("div");await render(records,page.items);
  if(version!==epoch||view!==viewVersion)return;
- root.prepend(el("p",page.items.length+" records on this page. Use the next page control for older records.","muted"));
- if(page.nextCursor)button("Next page",()=>list(name,render,page.nextCursor),root);
- $("content").replaceChildren(root);
+ const cards=Array.from(records.children).filter(node=>node.classList?.contains("card"));
+ const wrapper=el("section",undefined,"records-page");
+ const tools=el("div",undefined,"list-toolbar");
+ const search=el("input");search.type="search";search.autocomplete="off";
+ search.placeholder="Search loaded records";search.setAttribute("aria-label","Search records on this page");
+ tools.append(search);
+ const statuses=[...new Set(page.items.map(item=>item.status).filter(v=>typeof v==="string"&&v))].sort();
+ let filter;
+ if(statuses.length){
+  filter=el("select");filter.setAttribute("aria-label","Filter records by status");
+  for(const value of ["",...statuses]){const option=el("option",value||"All statuses");option.value=value;filter.append(option);}
+  tools.append(filter);
+ }
+ const count=el("p",undefined,"muted");count.setAttribute("role","status");count.setAttribute("aria-live","polite");
+ const snapshot=el("p",undefined,"muted");
+ if(statuses.length)snapshot.textContent="This page only: "+statuses.map(status=>status+" "+page.items.filter(item=>item.status===status).length).join(" · ")+". Not a fleet-wide total.";
+ const apply=()=>{
+  const term=search.value.trim().toLocaleLowerCase(),status=filter?.value||"";
+  let visible=0;
+  for(const [i,card]of cards.entries()){
+   const show=(!status||page.items[i]?.status===status)&&(!term||card.textContent.toLocaleLowerCase().includes(term));
+   card.hidden=!show;if(show)visible++;
+  }
+  count.textContent="Showing "+visible+" of "+cards.length+" loaded records on this page.";
+ };
+ search.addEventListener("input",apply);filter?.addEventListener("change",apply);
+ wrapper.append(tools,count,snapshot,records);
+ if(page.nextCursor)button("Next page",()=>list(name,render,page.nextCursor),wrapper);
+ apply();
+ $("content").replaceChildren(wrapper);
 }
 function card(root,title,status){const node=el("article",undefined,"card");node.append(el("h3",title),el("span",status,"pill"));root.append(node);return node;}
 async function load(){
