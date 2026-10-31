@@ -60,6 +60,19 @@ if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
  await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
  assert.ok(matched,"Expected release revision and Firebase web config have not reached the custom domain.");
  report.liveLandingIsCourier=true;
+ // A release marker by itself does not prove the client script preserved the
+ // disabled incident CTA; verify both HTML and the published JavaScript.
+ const stamp="?verify="+Date.now();
+ const [staffHtmlReply,staffJsReply]=await Promise.all([
+  fetch(origin+"/dispatcher/"+stamp,{cache:"no-store",signal:AbortSignal.timeout(15000)}),
+  fetch(origin+"/dispatcher/app.js"+stamp,{cache:"no-store",signal:AbortSignal.timeout(15000)})
+ ]);
+ const staffHtml=staffHtmlReply.ok?await staffHtmlReply.text():"";
+ const staffJs=staffJsReply.ok?await staffJsReply.text():"";
+ report.publishedDispatcherSecurityGate=staffHtml.includes("Access paused — security review") &&
+   staffJs.includes('login.textContent=dispatcherConfig.enabled ? "Continue with Google ↗" : "Access paused — security review"');
+ await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
+ assert.ok(report.publishedDispatcherSecurityGate,"Published dispatcher UI or JavaScript lost the closed security-review message.");
 }
 // This is the same read-only project lookup used by the Firebase Web SDK to validate origins.
 const authResponse=await fetch("https://identitytoolkit.googleapis.com/v1/projects?key="+encodeURIComponent(expectedConfig.apiKey),{signal:AbortSignal.timeout(15000)});
