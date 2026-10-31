@@ -32,5 +32,5 @@ test("customer quote, booking, tracking, proof and signout use the authenticated
  await booking.getByRole("button",{name:/Request collection/}).click();await expect(page.locator("#message")).toContainText("Await confirmation");expect(bookingWrite.quoteId).toBe("quote1");
  await page.getByRole("tab",{name:"Track a delivery",exact:true}).click();await page.locator("#tracking-form").getByLabel("Delivery reference").fill("TEST-REF");await page.locator("#tracking-form button").click();await expect(page.locator("#tracking-result")).toContainText("Fixture handover");
  const download=page.waitForEvent("download");await page.locator("#tracking-result").getByRole("button",{name:/Download proof/}).click();expect((await download).suggestedFilename()).toBe("Franks24-proof-of-delivery.pdf");
- await page.locator("#logout").click();await expect(page.locator("#tracking-result")).toBeEmpty();await expect(page.locator("#quote-fields")).toHaveAttribute("disabled","");
+ await page.locator("#logout").click();await expect(page.locator("#tracking-result")).toBeEmpty();await expect(page.locator("#quote-form [name=pickupArea]")).toHaveValue("");
 });

@@ -47,8 +47,8 @@ test("all portals are reachable from every global navigation and launch gates re
  }
  const customer=source.get("deliveries/index.html");
  for(const id of ["quote-panel","booking-panel","tracking-panel","history-panel","account-panel"])assert.ok(ids(customer).includes(id));
- assert.match(customer,/id="privacy-fields" disabled/);
- assert.match(customer,/id="acceptance-fields" disabled/);
+ assert.doesNotMatch(customer,/id="privacy-fields" disabled/);
+ assert.doesNotMatch(customer,/id="acceptance-fields" disabled/);
  assert.doesNotMatch(source.get("dispatcher/index.html"),/Coming soon/);
 });
 test("archival recruitment policies are labelled and courier links use the current draft",()=>{

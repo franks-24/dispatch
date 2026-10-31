@@ -10,25 +10,37 @@ test("public Franks24 Dispatch landing has delivery navigation and no recruitmen
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath("courier-landing.png"),fullPage:true});
 });
-test("delivery preview cannot accept live quote or booking submissions",async({page},info)=>{
- await page.goto("/deliveries/",{waitUntil:"domcontentloaded"});
+test("delivery preview accepts clicks and typing without sending live requests",async({page},info)=>{
+ const requests=[];page.on("request",request=>{if(new URL(request.url()).pathname.startsWith("/api/"))requests.push(request.url());});
+ await page.goto("/deliveries/#booking",{waitUntil:"domcontentloaded"});
  await expect(page.locator("#availability")).toContainText("not open yet");
- // FIELDSET has a disabled content attribute, but Playwright's isEnabled()
- // matcher applies to actionable form controls. Check both the gate attribute
- // and its actual descendant controls instead of asserting on the container.
- for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields"]){
+ for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","profile-fields","privacy-fields"]){
   const fieldset=page.locator("#"+id);
-  await expect(fieldset).toHaveAttribute("disabled","");
-  await expect(fieldset.locator("input, select, textarea, button").first()).toBeDisabled();
+  await expect(fieldset).not.toHaveAttribute("disabled","");
+  await expect(fieldset.locator("input, select, textarea").first()).toBeEnabled();
  }
- // None of the customer preview's forms may submit before activation.
- for(const id of ["quote-form","booking-form","tracking-form"]){
-  await expect(page.locator("#"+id+" button[type=submit]")).toBeDisabled();
- }
+ const pickup=page.locator('[name="pickupAddress"]');
+ await pickup.click();await pickup.fill("1 Test Street, Johannesburg");
+ await page.locator('[name="deliveryAddress"]').fill("2 Test Road, Pretoria");
+ await expect(pickup).toHaveValue("1 Test Street, Johannesburg");
+ await expect(page.locator("#quote-availability")).toContainText("issued quote is required");
+ await page.locator("#terms").check();await expect(page.locator("#terms")).toBeChecked();
+ await page.getByRole("tab",{name:"Get a quote",exact:true}).click();
+ const form=page.locator("#quote-form");
+ for(const [name,value] of Object.entries({pickupArea:"Johannesburg 2001",deliveryArea:"Pretoria 0002",weightKg:"1",lengthCm:"20",widthCm:"15",heightCm:"10"}))await form.locator('[name="'+name+'"]').fill(value);
+ await form.locator('[name="service"]').selectOption("express");
+ await form.getByRole("button",{name:/Request a quote/}).click();
+ await expect(form.locator(".form-message")).toContainText("nothing has been sent");
+ await page.getByRole("tab",{name:"Track a delivery",exact:true}).click();
+ await page.locator('#tracking-form [name="reference"]').fill("F24-TEST");
+ await page.locator('#tracking-form button').click();
+ await expect(page.locator('#tracking-form .form-message')).toContainText("not open yet");
+ await page.locator("#login").click();
+ await expect(page.locator("#message")).toContainText(/Google sign-in/);
+ expect(requests).toEqual([]);
  await expect(page.locator("header .brand")).toContainText("Franks24");
- await expect(page.locator("footer")).not.toContainText("work & hiring");
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- await page.screenshot({path:info.outputPath("delivery-preview.png"),fullPage:true});
+ await page.screenshot({path:info.outputPath("delivery-editable-preview.png"),fullPage:true});
 });
 test("privacy and policy links lead to explicitly unapproved draft",async({page})=>{
  await page.goto("/deliveries/policies.html",{waitUntil:"domcontentloaded"});
@@ -55,3 +67,4 @@ test("Dispatcher staff login preview is distinct and locked until directory veri
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath("dispatcher-staff-locked.png"),fullPage:true});
 });
+

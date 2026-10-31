@@ -23,7 +23,7 @@ test("customer deep links and keyboard tabs reveal the correct short task panel"
  await page.getByRole("tab",{name:"Get a quote",exact:true}).click();await expect(page.locator("#quote-panel")).toBeVisible();
  await page.keyboard.press("ArrowRight");await expect(page.locator("#booking-panel")).toBeVisible();
  await page.keyboard.press("End");await expect(page.locator("#account-panel")).toBeVisible();await expect(page.locator("#booking-panel")).toBeHidden();
- await expect(page.locator("#privacy-fields")).toHaveAttribute("disabled","");
+ await expect(page.locator("#privacy-fields")).not.toHaveAttribute("disabled","");
  await page.locator('.f24-footer a[href$="delivery-privacy.html"]').click();await expect(page.getByRole("heading",{name:"Delivery privacy notice",exact:true})).toBeVisible();
 });
 test("local delivery brief validates, downloads and never submits a booking",async({page})=>{
