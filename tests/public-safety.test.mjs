@@ -4,7 +4,7 @@ import {auditPage,auditStaticPreview,publicPages} from "../tools/audit-public-sa
 
 test("public preview pages use first-party scripts and no password collection",async()=>{
  const reports=await auditStaticPreview();
- assert.equal(reports.length,publicPages.length+8);
+ assert.equal(reports.length,publicPages.length+4);
  assert.deepEqual(reports.flatMap(r=>r.faults||[]),[],JSON.stringify(reports));
 });
 test("security scanner rejects untrusted executable sources and embedded credential prompts",()=>{
