@@ -1,4 +1,4 @@
-import {randomUUID} from "node:crypto";
+import {randomUUID,createHash} from "node:crypto";
 import {onRequest} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
 import {initializeApp,getApps,applicationDefault} from "firebase-admin/app";
@@ -35,7 +35,7 @@ function createRuntime(){
  let inventory;
  if(env.DISPATCH_INVENTORY_ENABLED==="true"&&env.DISPATCH_DATABASE_ID){
   const db=getFirestore(app,env.DISPATCH_DATABASE_ID);
-  const col=db.collection("dispatchInventory"),audit=db.collection("dispatchInventoryAudit");
+  const col=db.collection("dispatchInventory"),audit=db.collection("dispatchInventoryAudit"),requests=db.collection("dispatchInventoryRequests");
   const storage=async()=>{
    if(!env.DISPATCH_INVENTORY_BUCKET)throw Error("Private inventory bucket missing.");
    const bucket=getStorage(app).bucket(env.DISPATCH_INVENTORY_BUCKET);
@@ -48,10 +48,19 @@ function createRuntime(){
     return snap.docs.map(doc=>{const {photo,createdBy,...data}=doc.data();return data;});
    },
    get:async id=>{const snap=await col.doc(id).get();return snap.exists?snap.data():null;},
-   create:async(item,actor)=>{
-    await db.runTransaction(async tx=>{
+   create:async(item,actor,key,serialized)=>{
+    const hash=value=>createHash("sha256").update(value).digest("hex");
+    const requestRef=requests.doc(hash(actor+":"+key)),digest=hash(serialized);
+    return db.runTransaction(async tx=>{
+     const prior=await tx.get(requestRef);
+     if(prior.exists){
+      if(prior.data().digest!==digest)failure(409,"Request key reused for a different item.");
+      return prior.data().item;
+     }
      tx.create(col.doc(item.tracking),item);
+     tx.create(requestRef,{digest,item,createdAt:item.createdAt,actor});
      tx.create(audit.doc(),{action:"registered",tracking:item.tracking,actor,at:item.createdAt});
+     return item;
     });
    },
    advance:async(id,status,steps,actor,at)=>{
