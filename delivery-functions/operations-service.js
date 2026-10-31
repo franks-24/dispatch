@@ -57,7 +57,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
    const status=driver?.email===actor.email&&driver?.status==="approved"&&
     driver?.policyVersion===policyVersion&&Date.parse(driver.validUntil)>clock()?"approved":
     driver?.status==="suspended"?"suspended":undefined;
-   return {application:publicApplication(application,status),policyVersion};
+   return {application:publicApplication(application,status),approved:status==="approved",policyVersion};
   }
   requireValue(method==="POST",405,"Method not allowed.");
   requireValue(id(key)&&key.length>=8,400,"An idempotency key is required.");
