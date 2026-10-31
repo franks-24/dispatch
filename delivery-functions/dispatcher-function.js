@@ -8,6 +8,7 @@ import {getStorage} from "firebase-admin/storage";
 import {createDispatcherAuthorizer,createDispatcherSessionService,DispatcherAccessError} from "./dispatcher-auth.js";
 import {createWorkspaceDirectory} from "./dispatcher-directory.js";
 import {createInventoryService} from "./inventory-service.js";
+import {createWhatsAppInboxService} from "./whatsapp-intake.js";
 import {validatePrivateBucket} from "./proof-policy.js";
 
 const directorySecret=defineSecret("DISPATCH_DIRECTORY_SA_JSON");
@@ -32,6 +33,29 @@ function createRuntime(){
   dispatcherGroup:env.DISPATCH_GROUP_EMAIL
  });
  const session=createDispatcherSessionService({authorizer,enabled:true});
+ let whatsapp;
+ if(env.DISPATCH_WHATSAPP_ENABLED==="true"&&env.DISPATCH_DATABASE_ID){
+  const db=getFirestore(app,env.DISPATCH_DATABASE_ID);
+  const col=db.collection("dispatchWhatsAppDrafts"),audit=db.collection("dispatchInventoryAudit");
+  const store={
+   list:async limit=>{
+    const snapshot=await col.orderBy("receivedAt","desc").limit(limit).get();
+    return snapshot.docs.map(doc=>doc.data());
+   },
+   review:async(id,status,actor)=>db.runTransaction(async tx=>{
+    const ref=col.doc(id),snap=await tx.get(ref);
+    if(!snap.exists)return null;
+    const existing=snap.data();
+    if(existing.status!=="needs_review")return existing;
+    const reviewedAt=new Date().toISOString();
+    const updated={...existing,status,reviewedAt,reviewedBy:actor};
+    tx.update(ref,{status,reviewedAt,reviewedBy:actor});
+    tx.create(audit.doc(),{action:"whatsapp-review",draftId:id,status,actor,at:reviewedAt});
+    return updated;
+   })
+  };
+  whatsapp=createWhatsAppInboxService({authorizer,store,enabled:true});
+ }
  let inventory;
  if(env.DISPATCH_INVENTORY_ENABLED==="true"&&env.DISPATCH_DATABASE_ID){
   const db=getFirestore(app,env.DISPATCH_DATABASE_ID);
@@ -108,7 +132,7 @@ function createRuntime(){
    }
   });
  }
- return {session,inventory};
+ return {session,inventory,whatsapp};
 }
 export const dispatcherApi=onRequest({
  region:"europe-west1",cors:false,maxInstances:2,concurrency:10,timeoutSeconds:40,
@@ -120,10 +144,13 @@ export const dispatcherApi=onRequest({
  if(req.rawBody?.length>4500000)return res.status(413).json({error:"Request is too large."});
  try{
   if(!instance)instance=createRuntime();
-  const {session,inventory}=instance;
+  const {session,inventory,whatsapp}=instance;
   const pathname=req.path;
   const response=pathname==="/api/dispatcher/session"
    ? await session.handle({method:req.method,headers:req.headers})
+   : pathname.startsWith("/api/dispatcher/whatsapp/")
+   ? whatsapp ? await whatsapp.handle({method:req.method,path:req.originalUrl,headers:req.headers,body:req.body})
+     : {status:503,headers:{"Cache-Control":"no-store"},body:{error:"WhatsApp intake is not active."}}
    : inventory ? await inventory.handle({method:req.method,path:req.originalUrl,headers:req.headers,body:req.body})
    : {status:503,headers:{"Cache-Control":"no-store"},body:{error:"Inventory is not active."}};
   res.set(response.headers);
