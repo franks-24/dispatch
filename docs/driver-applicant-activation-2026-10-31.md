@@ -44,3 +44,13 @@ The last command without `--deploy` only builds the **closed** artifact. CI must
 
 ## Mandatory unresolved acceptance
 Live Firebase connection, Google authorized domains, selected database edition and security IAM, final approved policy documents, private vetting store, human reviewers, CI/browser outcomes, and a live sign-in test must be recorded before marking this workflow operational.
+
+## Isolated applicant-only Hosting and policy release verification
+
+- A separate firebase.applicants.json config is mandatory for applicant staging. Only the driverApplicationsApi Function is routed: /api/driver/application is permitted by its handler, and all other /api/** requests return 404 from that same function. Privileged dispatcher/operations/customer delivery webhooks have no Hosting rewrite.
+- The tools/build-firebase-applicants.mjs script builds .firebase-applicants-public with only the driver application page, required assets, and read-only draft policy pages. It does not copy any driver operations, dispatcher, customer booking, or administration workspace. Unknown URLs receive a closed-stage 404.
+- Before any enabling build, a genuine human-approved docs/driver-policy-release.json must record the exact immutable version, approver and approval reference, responsible party, information officer contact, POPIA and retention references, effective dates and SHA-256 checksums for the three final published legal HTML documents. The checked-in release record is pending and cannot activate intake. This mechanism checks evidence but cannot legally approve a policy.
+- A private environment variable DISPATCH_POLICY_RELEASE_SHA256 must match the SHA-256 of the reviewed release JSON in delivery-functions/.env.dispatch-1491f. The isolated applicant API fails closed with HTTP 503 without the expected hash format. Never commit private environment values or credentials.
+- Select a separate non-production DISPATCH_STAGING_SITE rather than the default Firebase project site. The helper publishes a seven-day Hosting preview only; it does not touch production DNS, enable operations, or activate customer collection.
+- Existing Firebase Google popup sign-in, private browser sessions and authenticated token API calls are source implementations, not evidence of live provider/authorized-domain testing. Validate actual first-time and returning Google users, revocation, other-user access, policy changes and multiple mobile engines before accepting the preview.
+- New regression suite: node --test tests/applicant-staging-isolation.test.mjs. Existing tests and real sign-in acceptance remain required.

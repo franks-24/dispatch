@@ -8,3 +8,6 @@ dist/
 
 # Generated Firebase Hosting artifact (contains public web app IDs only)
 .firebase-dispatcher-public/
+
+# Isolated applicant Hosting build output
+.firebase-applicants-public/
