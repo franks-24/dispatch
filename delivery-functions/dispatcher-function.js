@@ -9,6 +9,8 @@ import {createDispatcherAuthorizer,createDispatcherSessionService,DispatcherAcce
 import {createWorkspaceDirectory} from "./dispatcher-directory.js";
 import {createInventoryService} from "./inventory-service.js";
 import {createWhatsAppInboxService} from "./whatsapp-intake.js";
+import {createSmartCaptureService} from "./smart-capture.js";
+import {GoogleGenAI} from "@google/genai";
 import {validatePrivateBucket} from "./proof-policy.js";
 
 const directorySecret=defineSecret("DISPATCH_DIRECTORY_SA_JSON");
@@ -33,6 +35,42 @@ function createRuntime(){
   dispatcherGroup:env.DISPATCH_GROUP_EMAIL
  });
  const session=createDispatcherSessionService({authorizer,enabled:true});
+ let smartCapture;
+ if(env.DISPATCH_AI_ENABLED==="true"){
+  const db=getFirestore(app,env.DISPATCH_DATABASE_ID||"(default)");
+  const quota=db.collection("dispatchAiQuota");
+  const modelId=env.DISPATCH_AI_MODEL||"gemini-2.5-flash";
+  if(modelId!=="gemini-2.5-flash")throw Error("AI model not approved.");
+  const client=new GoogleGenAI({vertexai:true,project:projectId,location:env.DISPATCH_AI_LOCATION||"global"});
+  smartCapture=createSmartCaptureService({
+   authorizer,enabled:true,
+   checkQuota:async uid=>{
+    const date=new Date().toISOString().slice(0,10);
+    const ref=quota.doc(uid+"-"+date);
+    await db.runTransaction(async tx=>{
+     const previous=await tx.get(ref);
+     const count=previous.exists?previous.data().count||0:0;
+     if(count>=10)failure(429,"AI assist daily limit reached.");
+     tx.set(ref,{count:count+1,day:date,updatedAt:new Date().toISOString()});
+    });
+   },
+   model:async input=>{
+    const prompt="Extract only explicitly visible product or delivery fields from the supplied photo or text. "+
+     "Return JSON with only keys: name, sku, barcode, quantity, notes, orderReference, "+
+     "pickupAddress, deliveryAddress, requestedTime, driverName. "+
+     "Never invent information. Omit fields that are not clearly visible. "+
+     "Do not interpret the result as confirmation of a dispatch or delivery.";
+    const parts=[{text:prompt}];
+    if(input.text)parts.push({text:input.text});
+    if(input.image)parts.push({inlineData:input.image});
+    const response=await client.models.generateContent({
+     model:modelId,contents:[{role:"user",parts}],
+     config:{responseMimeType:"application/json",temperature:0,maxOutputTokens:900}
+    });
+    return JSON.parse(response.text||"{}");
+   }
+  });
+ }
  let whatsapp;
  if(env.DISPATCH_WHATSAPP_ENABLED==="true"&&env.DISPATCH_DATABASE_ID){
   const db=getFirestore(app,env.DISPATCH_DATABASE_ID);
@@ -132,7 +170,7 @@ function createRuntime(){
    }
   });
  }
- return {session,inventory,whatsapp};
+ return {session,inventory,whatsapp,smartCapture};
 }
 export const dispatcherApi=onRequest({
  region:"europe-west1",cors:false,maxInstances:2,concurrency:10,timeoutSeconds:40,
@@ -144,10 +182,13 @@ export const dispatcherApi=onRequest({
  if(req.rawBody?.length>4500000)return res.status(413).json({error:"Request is too large."});
  try{
   if(!instance)instance=createRuntime();
-  const {session,inventory,whatsapp}=instance;
+  const {session,inventory,whatsapp,smartCapture}=instance;
   const pathname=req.path;
   const response=pathname==="/api/dispatcher/session"
    ? await session.handle({method:req.method,headers:req.headers})
+   : pathname==="/api/dispatcher/ai/suggest"
+   ? smartCapture ? await smartCapture.handle({method:req.method,path:pathname,headers:req.headers,body:req.body})
+     : {status:503,headers:{"Cache-Control":"no-store"},body:{error:"AI assist is not enabled."}}
    : pathname.startsWith("/api/dispatcher/whatsapp/")
    ? whatsapp ? await whatsapp.handle({method:req.method,path:req.originalUrl,headers:req.headers,body:req.body})
      : {status:503,headers:{"Cache-Control":"no-store"},body:{error:"WhatsApp intake is not active."}}
