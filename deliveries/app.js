@@ -1,12 +1,14 @@
 import {firebaseConfig} from "../assets/config.js";
 import {deliveryConfig as config} from "./config.js";
 import {createDeliveryApi} from "./api.js";
+import {dispatcherConfig} from "../dispatcher/config.js";
+import {isVerifiedDispatcher} from "../dispatcher/route.js";
 import {quoteInput, bookingInput, bookable, money, statuses} from "./model.js";
 const $ = id => document.getElementById(id);
-let user = null, auth, sdk, quotes = [], epoch = 0;
+let user = null, auth, sdk, quotes = [], epoch = 0, roleResolved = !dispatcherConfig.enabled;
 let shipmentCursor=null,quoteCursor=null;
 const attempts = new Map();
-const ready = () => Boolean(user && config.enabled && config.policiesApproved);
+const ready = () => Boolean(user && roleResolved && config.enabled && config.policiesApproved);
 const api = createDeliveryApi({base:config.apiBase, origin:location.origin, getUser:()=>user});
 function message(text) {$("message").textContent = text;}
 function syncControls() {
@@ -16,7 +18,7 @@ function syncControls() {
   $("availability").textContent = !config.enabled || !config.policiesApproved ? "Preview — delivery requests are not open yet. No bookings or payments are accepted." : "Request a quote to begin. Collection is subject to booking confirmation and route availability.";
 }
 function clearPrivate() {
-  epoch++; quotes = []; attempts.clear();
+  epoch++; roleResolved=!dispatcherConfig.enabled; quotes = []; attempts.clear();
   shipmentCursor=null;quoteCursor=null;$("more-shipments").hidden=true;$("more-quotes").hidden=true;
   for (const id of ["quote-form","booking-form","tracking-form"]) $(id).reset();
   document.querySelectorAll('form button[type="submit"]').forEach(button=>button.disabled=false);
@@ -104,7 +106,22 @@ async function initialize() {
     const [app,authSdk]=await Promise.all([import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")]);
     sdk=authSdk;auth=sdk.getAuth(app.initializeApp(firebaseConfig,"franks24-deliveries"));
     await sdk.setPersistence(auth,sdk.browserSessionPersistence);
-    sdk.onAuthStateChanged(auth,current=>{clearPrivate();user=current;syncControls();if(ready())refresh();});
+    sdk.onAuthStateChanged(auth,async current=>{
+      clearPrivate();user=current;syncControls();
+      const version=epoch;
+      if(current && dispatcherConfig.enabled){
+        try {
+          const staff=await isVerifiedDispatcher({user:current,enabled:true,endpoint:dispatcherConfig.sessionApi,origin:location.origin});
+          if(version!==epoch || auth.currentUser?.uid!==current.uid)return;
+          if(staff){location.replace("../dispatcher/");return;}
+          roleResolved=true;syncControls();
+        } catch {
+          if(version===epoch)message("Workspace directory verification is unavailable. Delivery actions remain locked.");
+          return;
+        }
+      }
+      if(ready())refresh();
+    });
     $("login").disabled=false;
   }catch{message("Google sign-in is temporarily unavailable. Please try again later.");}
 }

@@ -48,3 +48,6 @@ Official references:
 
 ## Current state
 The staff preview is **disabled by default**. `dispatcher-auth.js` provides a unit-tested authorizer; connection to a trusted backend, actual Directory permissions and Google production SSO are pending. No staff claims or Google Workspace settings were changed.
+
+## Automatic routing from the customer sign-in
+When the Directory authorizer and same-origin API are activated, `/deliveries/` checks the signed-in Firebase user's role with `GET /api/dispatcher/session`. An affirmative server response redirects to `/dispatcher/`. A server-confirmed 403 means that user is not in the Dispatcher group and may continue as a customer. Unavailable or malformed verification locks delivery actions rather than assuming a role. This routing is a browser convenience, **not** the enforcement boundary. The Dispatcher backend must reauthorize every privileged request.
