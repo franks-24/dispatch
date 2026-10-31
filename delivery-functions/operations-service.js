@@ -51,7 +51,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
  // payout, reviewer or evidence endpoint is available to an unapproved user.
  async function applicantRequest(actor,method,body,key){
   requireValue(!actor.staff,403,"Applicant access only.");
-  requireValue(typeof actor.email==="string"&&/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(actor.email),403,"A verified Google email is required.");
+  requireValue(typeof actor.email==="string"&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(actor.email),403,"A verified Google email is required.");
   const path=applicantPath(actor.uid);
   if(method==="GET"){
    const [application,driver]=await Promise.all([store.get(path),store.get(driverPath(actor.uid))]);
