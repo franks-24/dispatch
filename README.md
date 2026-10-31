@@ -29,6 +29,12 @@ The website and all portals share a responsive header, footer, theme and courier
 
 The root pages and customer preview carry `noindex` until launch. The code intentionally keeps `deliveries/config.js` with `enabled:false` and `policiesApproved:false`. Do not flip either switch or promise live deliveries until the full backend, security and legal acceptance checks pass.
 
+## Applicant-only driver onboarding preview
+
+The new [driver application page](https://dispatch.franks24.com/driver/apply.html) is a separate Google-only review interface. Its **public Pages build stays disabled** until approved policies and the isolated `driverApplicationsApi` have been activated on Firebase Hosting. Applicants can then submit minimum details, acknowledge versioned policies and view only their own review status. They cannot read offers, trips or earnings.
+
+The isolated applicant API and its staging script are independent of the Dispatcher Directory service and operational courier API. See the [driver application staging and acceptance runbook](docs/driver-applicant-activation-2026-10-31.md). No public onboarding, human Google SSO or production release is claimed by this source change.
+
 ## Important: previous recruitment prototype is retired from the public landing
 
 Earlier commits created a recruitment UI with `worker`/`employer` roles, job listings and employer approval. **Those are not courier customer, driver or dispatcher roles.** The public root no longer loads that recruitment UI; the historic `assets/app.js`, `firestore.rules` and collections remain intact pending controlled migration. Do not relabel existing identities, overwrite historic policy acknowledgments or delete personal information without an approved migration and retention policy.
