@@ -10,7 +10,7 @@ function browser(fetch,getUserMedia){
  const element=id=>{
   if(!elements.has(id))elements.set(id,{id,listeners:{},value:id==="item-quantity"?"1":"",files:[],hidden:true,textContent:"",
    addEventListener(name,callback){this.listeners[name]=callback;},replaceChildren(){},append(){},focus(){},pause(){},async play(){},removeAttribute(){},
-   reset(){resets++;},getContext(){return {drawImage(){}};},toBlob(callback){callback({size:6,arrayBuffer:async()=>Uint8Array.from([255,216,255,1,2,3]).buffer});}});
+   reset(){resets++;element("item-photo").files=[];},getContext(){return {drawImage(){}};},toBlob(callback){callback({size:6,arrayBuffer:async()=>Uint8Array.from([255,216,255,1,2,3]).buffer});}});
   return elements.get(id);
  };
  const context={document:{getElementById:element,createElement:element},window:{addEventListener(){},BarcodeDetector:{},createImageBitmap:true},
@@ -38,7 +38,7 @@ test("failed photo upload retries the existing item without creating a duplicate
   created++;return json({item:{tracking:"F24-20261031-AAAAAAAAAAAAAA"}},201);
  });
  f.context.session({getIdToken:async()=>"staff"});await tick();
- f.element("item-name").value="Test parcel";f.element("item-photo").files=[{type:"image/jpeg"}];
+ f.element("item-name").value="Test parcel";f.element("item-photo").files=[new Blob(["photo"],{type:"image/jpeg"})];
  const submit=()=>f.element("inventory-form").listeners.submit({preventDefault(){},currentTarget:f.element("inventory-form")});
  await submit();assert.equal(created,1);assert.equal(uploads,1);
  assert.match(f.element("inventory-status").textContent,/will not create another item/);assert.equal(f.resets(),0);
@@ -59,9 +59,10 @@ test("an undecodable photo can be replaced while retaining the saved item",async
   created++;return json({item:{tracking:"F24-20261031-BBBBBBBBBBBBBB"}},201);
  });
  f.context.session({getIdToken:async()=>"staff"});await tick();
- f.element("item-name").value="Test parcel";f.element("item-photo").files=[{type:"image/jpeg",invalid:true}];
+ const invalidPhoto=new Blob(["invalid"],{type:"image/jpeg"});invalidPhoto.invalid=true;
+ f.element("item-name").value="Test parcel";f.element("item-photo").files=[invalidPhoto];
  const submit=()=>f.element("inventory-form").listeners.submit({preventDefault(){},currentTarget:f.element("inventory-form")});
  await submit();assert.equal(created,1);assert.equal(uploads,0);
- f.element("item-photo").files=[{type:"image/jpeg"}];f.element("item-photo").listeners.change();
+ f.element("item-photo").files=[new Blob(["photo"],{type:"image/jpeg"})];f.element("item-photo").listeners.change();
  await submit();assert.equal(created,1);assert.equal(uploads,1);assert.equal(f.resets(),1);
 });

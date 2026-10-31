@@ -64,7 +64,7 @@ async function load(){
    root.append(el("p","Use these controls only when safely parked. Offers show areas and agreed fees; recipient details appear after you accept."));
    if(!jobs.length)root.append(el("p","No assigned offers or trips."));
    for(const job of jobs){
-    const c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);c.append(el("p",money(job.feeMinor),"money"),el("small","Reference "+job.reference));
+    const c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);c.append(el("p",money(job.feeMinor),"money"),el("p","Agreed delivery deadline: "+(Number.isFinite(Date.parse(job.dueAt))?new Date(job.dueAt).toLocaleString("en-ZA"):"Contact dispatch")),el("small","Reference "+job.reference));
     if(job.status==="offered")button("Accept offer and agreed fee terms",async()=>{await request(prefix+"/jobs/"+job.id+"/accept",{feePolicyVersion:operationsConfig.policyVersion});await load();},c);
     if(["accepted","collected","in_transit","out_for_delivery","exception"].includes(job.status))button("Open trip",()=>openTrip(job.id),c);
    }
@@ -112,7 +112,7 @@ async function load(){
    }
   }else if(collection==="quotes"){
    root.append(el("p","Enter an actual inclusive carrier price only after confirming service coverage. No automatic rates or customer payments are created."));
-   for(const quote of items){const c=card(root,quote.pickupArea+" → "+quote.deliveryArea,quote.status);c.append(el("p",quote.weightKg+" kg · "+quote.service));
+   for(const quote of items){const c=card(root,quote.pickupArea+" → "+quote.deliveryArea,quote.status);c.append(el("p",quote.weightKg+" kg · "+quote.service),el("p","Parcel: "+quote.lengthCm+" × "+quote.widthCm+" × "+quote.heightCm+" cm (length × width × height)"));
     if(quote.status==="pending")form("Issue verified quote",c,f=>{
      field(f,"Inclusive amount in ZAR","total",{type:"number"});field(f,"Quote expires","expiresAt",{type:"datetime-local"});field(f,"Private carrier rate evidence reference","rateEvidenceRef");field(f,"Coverage and all required charges verified","coverageApproved",{type:"checkbox"});
     },"Issue quote",async(_,f)=>{await request(prefix+"/quotes/"+quote.id+"/issue",{totalMinor:Math.round(Number(f.get("total"))*100),expiresAt:new Date(f.get("expiresAt")).toISOString(),rateEvidenceRef:f.get("rateEvidenceRef"),coverageApproved:f.get("coverageApproved")==="yes"});await load();});
@@ -153,6 +153,7 @@ async function openTrip(id){
  const version=epoch;stopGPS();const data=await request(prefix+"/jobs/"+id);if(version!==epoch)return;
  const root=$("content");root.replaceChildren();button("Back to jobs",()=>load(),root);
  const job=data.job,c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);
+ c.append(el("p","Agreed delivery deadline: "+(Number.isFinite(Date.parse(job.dueAt))?new Date(job.dueAt).toLocaleString("en-ZA"):"Contact dispatch")));
  if(data.delivery)for(const [key,value]of Object.entries(data.delivery))c.append(el("p",key.replaceAll(/([A-Z])/g," $1")+": "+(value||"")));
  if(!["accepted","collected","in_transit","out_for_delivery","exception"].includes(job.status))return;
  if(mode==="driver"){

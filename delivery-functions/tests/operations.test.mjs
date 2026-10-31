@@ -57,6 +57,7 @@ test("one confirmed shipment produces one offered job and offers omit recipient 
  const s=setup();const result=await s.offer();assert.equal(result.status,201);
  const id=result.body.job.id;
  const before=await s.call("driver",driverJob(id));assert.equal(before.body.delivery,undefined);
+ assert.equal(before.body.job.dueAt,future);
  const again=await s.call("dispatcher","/api/operations/jobs",{customerUid:"customer",shipmentId:"shipment",driverId:hash("driver"),feeMinor:15000,feePolicyVersion:"driver-policy-1",dueAt:future});
  assert.equal(again.status,409);
  s.seedDriver("other");assert.equal((await s.call("other",driverJob(id))).status,404);

@@ -69,8 +69,8 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
   return {limit,cursor};
  };
  function jobView(job,staff=false){
-  const {id,reference,status,pickupArea,deliveryArea,feeMinor,currency,createdAt,updatedAt,driverId,proof,location}=job;
-  const view={id,reference,status,pickupArea,deliveryArea,feeMinor,currency,createdAt,updatedAt,proofAvailable:!!proof};
+  const {id,reference,status,pickupArea,deliveryArea,feeMinor,currency,dueAt,createdAt,updatedAt,driverId,proof,location}=job;
+  const view={id,reference,status,pickupArea,deliveryArea,feeMinor,currency,dueAt,createdAt,updatedAt,proofAvailable:!!proof};
   if(staff){
    view.driverId=driverId;
    view.location=location?{lastSeen:location.at,accuracy:location.accuracy,stale:clock()-Date.parse(location.at)>120000,...(clock()-Date.parse(location.at)<=120000?{latitude:location.latitude,longitude:location.longitude}:{})}:null;
