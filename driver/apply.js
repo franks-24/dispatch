@@ -1,5 +1,5 @@
 import {firebaseConfig} from "../assets/config.js";
-import {operationsConfig} from "../workspaces/config.js";
+import {applicantConfig} from "./apply-config.js";
 
 const $=id=>document.getElementById(id);
 const form=$("apply-form"),status=$("applicant-status"),panel=$("application-panel");
@@ -68,7 +68,7 @@ form.addEventListener("submit",async event=>{
  event.preventDefault();if(!form.reportValidity()||!user)return;
  const button=$("apply-submit"),v=new FormData(form),version=epoch;
  const payload={name:String(v.get("name")||"").trim(),region:String(v.get("region")||"").trim(),
-  vehicle:String(v.get("vehicle")||""),policyVersion:operationsConfig.policyVersion,
+  vehicle:String(v.get("vehicle")||""),policyVersion:applicantConfig.policyVersion,
   termsAccepted:v.get("termsAccepted")==="on",
   privacyAcknowledged:v.get("privacyAcknowledged")==="on",
   dataUseAcknowledged:v.get("dataUseAcknowledged")==="on"};
@@ -79,8 +79,8 @@ form.addEventListener("submit",async event=>{
 });
 window.addEventListener("pagehide",()=>{controller.abort();});
 async function start(){
- if(!operationsConfig.enabled||!operationsConfig.policyVersion||
-    operationsConfig.policyVersion.toLowerCase().includes("draft")){
+ if(!applicantConfig.enabled||!applicantConfig.policyVersion||
+    applicantConfig.policyVersion.toLowerCase().includes("draft")){
   note("Applications are not yet open. Approved policies and the secure Firebase application API are required. No application data is collected here.");
   return;
  }
