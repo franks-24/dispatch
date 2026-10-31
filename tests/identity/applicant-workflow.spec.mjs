@@ -6,6 +6,16 @@ test("public Pages applicant preview never collects information before approval"
  await expect(page.locator("#application-panel")).toBeHidden();
  await expect(page.locator("#applicant-status")).toContainText("Applications are not yet open");
  await expect(page.getByRole("link",{name:"Review launch status and policy drafts"})).toHaveAttribute("href","../deliveries/policies.html");
+ await page.getByLabel("Vehicle you intend to use").selectOption("bakkie");
+ await page.getByRole("button",{name:"Check readiness"}).click();
+ await expect(page.locator("#readiness-status")).toContainText("Still to prepare");
+ await page.getByRole("checkbox",{name:/proof of identity/}).check();
+ await page.getByRole("checkbox",{name:/valid licence and permit/}).check();
+ await page.getByRole("checkbox",{name:/vehicle permission/}).check();
+ await page.getByRole("checkbox",{name:/reviewed driver and privacy terms/}).check();
+ await page.getByRole("button",{name:"Check readiness"}).click();
+ await expect(page.locator("#readiness-status")).toContainText("not verification or approval");
+
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test("staged applicant can apply once, acknowledge approved policies, track status and sign out",async({page})=>{
