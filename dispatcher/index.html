@@ -20,15 +20,73 @@
 <section class="staff-card" aria-labelledby="staff-heading">
 <p class="eyebrow"><span class="eyebrow-dot"></span> INTERNAL GOOGLE WORKSPACE DIRECTORY</p>
 <h1 id="staff-heading">Dispatcher<span class="accent-star">✳</span></h1>
-<p class="staff-lead">A dedicated staff entry point for verified members of the internal Workspace directory. Customer and driver accounts do not inherit Dispatcher access.</p>
-<div class="staff-status" id="staff-status" role="status" aria-live="polite">Staff sign-in preview is disabled pending authorized-directory, backend and security verification.</div>
+<p class="staff-lead">Frank and other approved staff each sign in with their own Google Workspace account. Select your account once, then enter the dispatch desk directly when your permissions are verified.</p>
+<div class="staff-status" id="staff-status" role="status" aria-live="polite">Dispatcher staff access is currently restricted until the directory backend is ready.</div>
 <div class="staff-actions"><button id="staff-login" class="button button-primary button-large" type="button" disabled>Continue with Google ↗</button>
 <button id="staff-logout" class="button button-outline button-large" type="button" hidden>Sign out</button></div>
 <div id="staff-workspace" class="staff-workspace" hidden>
-<h2>Internal Dispatcher access verified</h2>
-<p>The authenticated staff identity was validated by the server. Operational assignment, fleet and proof-of-delivery actions remain unavailable until separately implemented and authorized.</p>
+<div class="staff-workspace-head">
+ <div><p class="staff-workspace-label">FRANKS24 / DISPATCH</p><h2>Dispatch desk</h2><p class="staff-workspace-account">Signed in as <strong id="staff-account"></strong></p></div>
+ <span class="staff-verified">Staff verified</span>
 </div>
-<p class="staff-footnote">Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
+<p class="staff-workspace-notice">Your identity is verified. Dispatch operations are not live yet; these shortcuts will become available only when the protected delivery backend is deployed.</p>
+<div class="staff-task-grid" aria-label="Upcoming dispatcher actions">
+ <div class="staff-task"><strong>01 · New delivery</strong><span>Capture sender, recipient and parcel details.</span><a class="staff-task-link" href="#inventory-panel">Scan inventory item ↗</a></div>
+ <div class="staff-task"><strong>02 · Active deliveries</strong><span>See today's jobs and assign a verified driver.</span><button type="button" disabled title="Delivery backend is not live">Open dispatch queue · Coming soon</button></div>
+ <div class="staff-task"><strong>03 · Track a delivery</strong><span>Find a parcel and view verified tracking events.</span><button type="button" disabled title="Delivery backend is not live">Open tracking · Coming soon</button></div>
+</div>
+
+<section id="inventory-panel" class="inventory-panel" aria-labelledby="inventory-title" hidden>
+ <div class="inventory-intro"><div><p class="staff-workspace-label">MOBILE CAPTURE</p>
+ <h3 id="inventory-title">Scan &amp; document inventory</h3>
+ <p>Scan a barcode or enter it manually. Every saved item receives its own Franks24 tracking reference. A SKU identifies the product, not the individual dispatch.</p></div></div>
+ <form id="inventory-form" class="inventory-form">
+  <div class="inventory-field"><label for="item-barcode">Barcode / serial number</label>
+   <div class="inventory-scan"><input id="item-barcode" name="barcode" autocomplete="off" maxlength="100" placeholder="Scan or type code">
+    <button id="scan-barcode" type="button">Scan barcode</button></div>
+   <video id="barcode-video" playsinline muted autoplay hidden aria-label="Barcode scanner camera"></video>
+   <small>Phone camera requires HTTPS and browser permission. Manual entry always works.</small>
+  </div>
+  <div class="inventory-field"><label for="item-name">Item description *</label>
+   <input id="item-name" name="name" autocomplete="off" maxlength="120" required placeholder="Start typing a previous product or new description">
+   <div class="product-suggestions" id="product-suggestions" aria-label="Suggested matching products"></div>
+   <p class="inventory-helper" id="product-match-hint" role="status" aria-live="polite"></p></div>
+  <div class="inventory-fields-two">
+   <div class="inventory-field"><label for="item-sku">SKU / item number</label>
+    <input id="item-sku" name="sku" maxlength="80" autocomplete="off" placeholder="e.g. PUMP-220"></div>
+   <div class="inventory-field"><label for="item-quantity">Quantity *</label>
+    <input id="item-quantity" name="quantity" type="number" min="1" max="10000" step="1" value="1" required></div>
+  </div>
+  <div class="inventory-field"><label for="item-notes">Notes</label>
+   <textarea id="item-notes" name="notes" maxlength="300" rows="2" placeholder="Condition, packaging or dispatch details"></textarea></div>
+  <div class="inventory-field"><label for="item-photo">Item photo (optional)</label>
+   <input id="item-photo" name="photo" type="file" accept="image/*" capture="environment">
+   <img id="photo-preview" alt="Selected inventory item photo" hidden>
+   <small>Photos are uploaded privately after the inventory record is saved. Do not photograph unnecessary personal information.</small>
+  </div>
+  <button class="button button-primary" id="inventory-save" type="submit">Save item &amp; generate tracking reference</button>
+ </form>
+ <div id="inventory-status" class="inventory-status" role="status" aria-live="polite">Waiting for verified dispatcher access.</div>
+ <div class="inventory-list-head"><h3>Recent inventory</h3>
+  <button type="button" id="inventory-refresh">Refresh</button></div>
+ <div class="inventory-field"><label for="inventory-search">Find by tracking number, SKU or barcode</label>
+  <input id="inventory-search" type="search" placeholder="Search recent items"></div>
+ <div id="inventory-list" class="inventory-list" aria-live="polite"></div>
+ <p class="inventory-footnote">Status updates are staff-confirmed records, not automatic courier tracking. AI-assisted label reading is a future opt-in enhancement and cannot approve dispatches.</p>
+</section>
+<section id="whatsapp-panel" class="inventory-panel" aria-labelledby="whatsapp-title" hidden>
+ <p class="staff-workspace-label">WHATSAPP INTAKE · STAFF REVIEW</p>
+ <h3 id="whatsapp-title">Forwarded orders and instructions</h3>
+ <p>Messages forwarded to the approved Franks24 Business WhatsApp number appear here as drafts. Product details can be copied to the inventory form. Pickup addresses, delivery times and driver names remain suggestions until a dispatcher verifies them.</p>
+ <div class="inventory-list-head">
+  <strong>Recent inbound message drafts</strong><button type="button" id="whatsapp-refresh">Refresh inbox</button>
+ </div>
+ <div id="whatsapp-status" class="inventory-status" role="status" aria-live="polite">Inbox not activated.</div>
+ <div id="whatsapp-drafts" class="inventory-list"></div>
+ <p class="inventory-footnote">Do not forward unnecessary personal information. Franks24 must publish an appropriate privacy notice and configure its official WhatsApp Business webhook before receiving messages.</p>
+</section>
+</div>
+<p class="staff-footnote">To use another approved staff account, select <strong>Switch Google account</strong> after sign-in. Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
 </section>
 </main>
 <footer class="staff-footer">FRANKS24 / DISPATCH · STAFF ACCESS CONTROLLED</footer>
