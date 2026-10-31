@@ -18,12 +18,14 @@ test("quote, booking and tracking all link to the disabled customer preview",asy
  assert.match(html,/href="\.\/deliveries\/#workspace"/);
  assert.match(html,/href="\.\/deliveries\/policies\.html"/);
 });
-test("delivery forms and sensitive actions fail closed before approval",async()=>{
+test("delivery capture remains editable while live requests stay closed before approval",async()=>{
  const [html,config]=await Promise.all([source("deliveries/index.html"),source("deliveries/config.js")]);
  assert.match(config,/enabled:\s*false/);
  assert.match(config,/policiesApproved:\s*false/);
  assert.match(config,/delivery-draft-2026-10-30/);
- for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields"])assert.match(html,new RegExp('id="'+id+'" disabled'));
+ for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","profile-fields","privacy-fields"])assert.doesNotMatch(html,new RegExp('id="'+id+'" disabled'));
+ assert.match(html,/entries are not saved after leaving this page/);
+ assert.match(html,/issued quote is required/);
  assert.match(html,/No bookings or payments are accepted/);
  assert.doesNotMatch(html,/work and hiring|separate Franks24 service/i);
 });
@@ -35,3 +37,4 @@ test("delivery policy remains unapproved and explains GPS/proof risks",async()=>
  assert.match(html,/Proof of delivery/);
  assert.match(html,/retention periods/);
 });
+

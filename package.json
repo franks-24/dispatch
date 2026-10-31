@@ -10,7 +10,7 @@
     "test:config": "node --test tests/firebase-config.test.mjs",
     "test:identity:unit": "node --test tests/identity/session.test.mjs tests/identity/activation.test.mjs",
     "test:identity": "playwright test --config tests/identity/playwright.config.mjs",
-    "test:deliveries": "node --test tests/deliveries.test.mjs",
+    "test:deliveries": "node --test tests/deliveries.test.mjs tests/delivery-interactions.test.mjs",
     "test:dispatcher": "node --test tests/dispatcher.test.mjs tests/dispatcher-routing.test.mjs delivery-functions/tests/dispatcher-auth.test.mjs",
     "test:release": "node --test tests/release-manifest.test.mjs",
     "test:operations": "node --test delivery-functions/tests/operations.test.mjs tests/capture-regressions.test.mjs tests/operations-ui.test.mjs tests/pages-publisher.test.mjs"
@@ -23,4 +23,3 @@
     "esbuild": "^0.25.0"
   }
 }
-
