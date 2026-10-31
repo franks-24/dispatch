@@ -1,76 +1,58 @@
 import {test,expect} from "@playwright/test";
-import {readFile} from "node:fs/promises";
-import {initializeTestEnvironment} from "@firebase/rules-unit-testing";
-import {doc,deleteDoc} from "firebase/firestore";
-const config='export const firebaseConfig={apiKey:"fake-api-key",authDomain:"demo-dispatch-identity.firebaseapp.com",projectId:"demo-dispatch-identity",appId:"1:123:web:identity-tests"};';
-async function open(page,account,configured=true){
- await page.addInitScript(value=>window.dispatchTestAccount=value,account);
- await page.route("https://fonts.googleapis.com/**",route=>route.fulfill({contentType:"text/css",body:""}));
- await page.route("**/assets/config.js",route=>route.fulfill({contentType:"text/javascript",body:configured?config:"export const firebaseConfig=null;"}));
- await page.route("**/assets/firebase-client.js",async route=>route.fulfill({contentType:"text/javascript",body:await readFile(".identity-tests/firebase-client.js","utf8")}));
- await page.goto("/");
-}
-async function login(page){await expect(page.locator("[data-login]").first()).toBeEnabled();await page.locator("[data-login]").first().click()}
-async function acknowledge(page){for(const id of ["consent-terms","consent-privacy","consent-ownership"])await page.locator("#"+id).check()}
-test("new worker accepts separate agreements, returns without onboarding, and signs out",async({page},info)=>{
- await open(page,"worker-"+info.project.name);await login(page);
- await expect(page.locator("#view-onboarding")).toBeVisible();
- for(const id of ["consent-terms","consent-privacy","consent-ownership"])await expect(page.locator("#"+id)).not.toBeChecked();
- await page.locator("#profile-name").fill("Worker Identity Test");
- await page.locator("#profile-location").fill("Johannesburg");
- await page.locator("#onboard-submit").click();await expect(page.locator("#consent-error")).toBeVisible();
- await acknowledge(page);await page.locator("#onboard-submit").click();
- await expect(page.locator("#view-dashboard")).toBeVisible();await expect(page.locator("#user-role")).toHaveText("Job seeker");
- await expect(page.locator("#new-job-button")).toBeHidden();
- const uid=await page.evaluate(()=>window.dispatchTestUid);
- await page.reload();await expect(page.locator("#view-dashboard")).toBeVisible();await expect(page.locator("#view-onboarding")).toBeHidden();
- // Synthetic emulator fixture: simulate an existing profile without the current agreement.
- const environment=await initializeTestEnvironment({projectId:"demo-dispatch-identity",firestore:{host:"127.0.0.1",port:8080}});
- await environment.withSecurityRulesDisabled(context=>deleteDoc(doc(context.firestore(),"agreements",uid,"versions","2026-10-30-v1")));
- await environment.cleanup();
- await page.reload();await expect(page.locator("#view-onboarding")).toBeVisible();await expect(page.locator("#profile-fields")).toBeHidden();
- await acknowledge(page);await page.locator("#onboard-submit").click();await expect(page.locator("#view-dashboard")).toBeVisible();
- await expect(page.locator("#user-name")).toHaveText("Worker Identity Test");
- const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);expect(overflow).toBe(false);
- await page.screenshot({path:info.outputPath("worker-workspace.png"),fullPage:true});
- await page.locator("#nav-signout").click();await expect(page.locator("#view-landing")).toBeVisible();
- await expect(page.locator("#user-name")).toHaveText("");await expect(page.locator("#profile-details")).toBeEmpty();
+test("public Franks24 Dispatch landing has delivery navigation and no recruitment UI",async({page},info)=>{
+ await page.goto("/",{waitUntil:"domcontentloaded"});
+ await expect(page.locator("#hero-heading")).toBeVisible();
+ await expect(page.getByRole("heading",{name:/Every delivery/i})).toBeVisible();
+ await expect(page.locator(".dispatch-availability")).toContainText("Preview only");
+ for(const fragment of ["quote","booking","tracking"])await expect(page.locator('a[href="./deliveries/#'+fragment+'"]')).toBeVisible();
+ await expect(page.locator("[data-login]")).toHaveCount(0);
+ expect(await page.locator("main").innerText()).not.toMatch(/post a job|I'm hiring|job seeker/i);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath("courier-landing.png"),fullPage:true});
 });
-test("employer is recognised and cannot publish without administrator approval",async({page},info)=>{
- await open(page,"employer-"+info.project.name);await login(page);
- await expect(page.locator("#view-onboarding")).toBeVisible();
- await page.locator('[data-role="employer"]').click();await page.locator("#profile-name").fill("Employer Identity Test");await page.locator("#profile-location").fill("Pretoria");
- await acknowledge(page);await page.locator("#onboard-submit").click();
- await expect(page.locator("#view-dashboard")).toBeVisible();await expect(page.locator("#user-role")).toHaveText("Hiring team");
- await expect(page.locator("#employer-approval-banner")).toBeVisible();await expect(page.locator("#new-job-button")).toBeHidden();
- await expect(page.locator("#employer-approval-heading")).toHaveText("Verification pending");
- await page.reload();await expect(page.locator("#view-dashboard")).toBeVisible();await expect(page.locator("#jobs-nav-label")).toHaveText("My jobs");
- await page.screenshot({path:info.outputPath("employer-workspace.png"),fullPage:true});
+test("delivery preview cannot accept live quote or booking submissions",async({page},info)=>{
+ await page.goto("/deliveries/",{waitUntil:"domcontentloaded"});
+ await expect(page.locator("#availability")).toContainText("not open yet");
+ // FIELDSET has a disabled content attribute, but Playwright's isEnabled()
+ // matcher applies to actionable form controls. Check both the gate attribute
+ // and its actual descendant controls instead of asserting on the container.
+ for(const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields"]){
+  const fieldset=page.locator("#"+id);
+  await expect(fieldset).toHaveAttribute("disabled","");
+  await expect(fieldset.locator("input, select, textarea, button").first()).toBeDisabled();
+ }
+ // None of the customer preview's forms may submit before activation.
+ for(const id of ["quote-form","booking-form","tracking-form"]){
+  await expect(page.locator("#"+id+" button[type=submit]")).toBeDisabled();
+ }
+ await expect(page.locator("header .brand")).toContainText("Franks24");
+ await expect(page.locator("footer")).not.toContainText("work & hiring");
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath("delivery-preview.png"),fullPage:true});
 });
-test("cancelled Google popup stays signed out and offers retry",async({page},info)=>{
- await open(page,"cancel-"+info.project.name);await page.evaluate(()=>window.dispatchTestCancel=true);await login(page);
- await expect(page.locator("#view-landing")).toBeVisible();await expect(page.locator("[data-login]").first()).toBeEnabled();await expect(page.locator("#view-dashboard")).toBeHidden();
+test("privacy and policy links lead to explicitly unapproved draft",async({page})=>{
+ await page.goto("/deliveries/policies.html",{waitUntil:"domcontentloaded"});
+ await expect(page.getByRole("heading",{name:/Dispatch delivery policy drafts/})).toBeVisible();
+ await expect(page.locator(".notice")).toContainText("Draft for review");
+ await expect(page.locator("main")).toContainText("Driver GPS");
 });
-test("profile-read failure has a recoverable private error state",async({page},info)=>{
- await open(page,"error-"+info.project.name);await page.evaluate(()=>window.dispatchTestFailProfile=true);await login(page);
- await expect(page.locator("#view-auth-error")).toBeVisible();await expect(page.locator("#view-dashboard")).toBeHidden();
- await page.evaluate(()=>window.dispatchTestFailProfile=false);await page.locator("#retry-identity").click();
- await expect(page.locator("#view-onboarding")).toBeVisible();
-});
-test("missing production config fails closed and remains readable on mobile",async({page},info)=>{
- await open(page,"unconfigured-"+info.project.name,false);await expect(page.locator("#identity-notice")).toContainText("not active yet");
- await expect(page.locator("[data-login]").first()).toBeDisabled();await expect(page.locator("#view-onboarding")).toBeHidden();
- expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
- await page.screenshot({path:info.outputPath("public-landing.png"),fullPage:true});
+test("live custom domain responds, checking new copy only once published",async({page},info)=>{
+ const response=await page.goto("https://dispatch.franks24.com/",{waitUntil:"domcontentloaded"});
+ expect(response?.status()).toBe(200);
+ await expect(page.locator("#hero-heading")).toBeVisible();
+ if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
+  await expect(page).toHaveTitle("Franks24 | Dispatch and Delivery Tracking");
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
+ await page.screenshot({path:info.outputPath("live-custom-domain.png"),fullPage:true});
 });
 
-test("live custom domain renders without horizontal overflow",async({page},info)=>{
- const response=await page.goto("https://dispatch.franks24.com/",{waitUntil:"domcontentloaded"});
- expect(response.status()).toBe(200);await expect(page.locator("#hero-heading")).toBeVisible();
- const layout=await page.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth}));
- await info.attach("live-layout.json",{body:JSON.stringify(layout),contentType:"application/json"});
- // Before deployment the live site is the old main, not the candidate under test.
- // Enforce the fixed live layout after the source is published on main.
- if(process.env.VERIFY_PUBLISHED_SOURCE==="true")expect(layout.width<=layout.viewport+1).toBe(true);
- await page.screenshot({path:info.outputPath("live-custom-domain.png"),fullPage:true});
+test("Dispatcher staff login preview is distinct and locked until directory verification",async({page},info)=>{
+ await page.goto("/dispatcher/",{waitUntil:"domcontentloaded"});
+ await expect(page.getByRole("heading",{name:/Dispatcher/})).toBeVisible();
+ await expect(page.locator("#staff-login")).toBeDisabled();
+ await expect(page.locator("#staff-workspace")).toBeHidden();
+ await expect(page.locator("#staff-status")).toContainText("disabled pending");
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath("dispatcher-staff-locked.png"),fullPage:true});
 });

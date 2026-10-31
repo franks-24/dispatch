@@ -10,7 +10,9 @@ report.tls=await new Promise((resolve,reject)=>{const socket=tls.connect({host,p
 const response=await fetch(origin+"/",{signal:AbortSignal.timeout(20000)});
 assert.equal(response.status,200,"Custom domain must return HTTP 200");
 assert.equal(new URL(response.url).protocol,"https:","Final site must use HTTPS");
-const html=await response.text();assert.match(html,/data-login/);
+const html=await response.text();
+report.liveLandingIsCourier=html.includes('<title>Franks24 | Dispatch and Delivery Tracking</title>');
+if(process.env.VERIFY_PUBLISHED_SOURCE==='true')assert.ok(report.liveLandingIsCourier,'Published landing must describe the courier service');
 report.httpStatus=response.status;
 report.assets=[];
 for(const path of [...new Set([...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)].map(match=>match[1]))]){
@@ -25,15 +27,15 @@ let liveConfig=await readLiveConfig();
 const expectedConfig=JSON.parse(await readFile("assets/firebase-config.public.json","utf8"));
 report.firebaseConfigured=!!liveConfig?.apiKey;
 if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
- const expected=await readFile("assets/app.js","utf8");let matched=false;
+ const expected=await readFile("index.html","utf8");let matched=false;
  for(let attempt=0;attempt<12;attempt++){
-  const remote=await (await fetch(origin+"/assets/app.js?verify="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(15000)})).text();
+  const remote=await (await fetch(origin+"/?verify="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(15000)})).text();
   liveConfig=await readLiveConfig();
   if(remote===expected&&liveConfig?.appId===expectedConfig.appId&&liveConfig?.apiKey===expectedConfig.apiKey){matched=true;break}
   await new Promise(resolve=>setTimeout(resolve,10000))
  }
- assert.ok(matched,"Published identity source and public Firebase settings have not reached the custom domain");
- report.publishedSourceMatches=true;report.firebaseConfigured=true;
+ assert.ok(matched,"Published courier landing and public Firebase settings have not reached the custom domain");
+ report.publishedLandingMatches=true;report.firebaseConfigured=true;
 }
 // This is the same read-only project lookup used by the Firebase Web SDK to validate origins.
 const authResponse=await fetch("https://identitytoolkit.googleapis.com/v1/projects?key="+encodeURIComponent(expectedConfig.apiKey),{signal:AbortSignal.timeout(15000)});

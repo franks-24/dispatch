@@ -1,0 +1,22 @@
+/* Franks24 is the primary brand; Dispatch is the courier and logistics service. */
+.dispatch-skip{position:absolute;left:1rem;top:-6rem;background:#b8f477;color:#0b1722;padding:.8rem 1rem;z-index:100;font-weight:700}
+.dispatch-skip:focus{top:1rem}
+.dispatch-hero{padding-top:85px;padding-bottom:90px}
+.dispatch-hero .hero-copy{min-width:0}
+.dispatch-hero .hero-outline{white-space:normal}
+.dispatch-actions{display:flex;flex-wrap:wrap;gap:13px;align-items:center}
+.dispatch-actions .button-outline{color:#fff;border-color:#657a74}
+.dispatch-text-link{color:#c5f6a4;font-size:14px;font-weight:700;min-height:48px;display:inline-flex;align-items:center;gap:9px}
+.dispatch-text-link:hover,.dispatch-text-link:focus-visible{text-decoration:underline;text-underline-offset:5px}
+.dispatch-availability{margin:27px 0 0;padding:15px 18px;max-width:62ch;background:#152a35;color:#e0e9e8;border:1px solid #47606b;border-left:4px solid #b8f477;border-radius:10px;font-size:13px;line-height:1.7}
+.dispatch-availability strong{color:#b8f477}
+.dispatch-nav-cta{white-space:nowrap}
+.dispatch-legal-note{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:8px;line-height:1.6;padding:26px 6%;background:#e9f2ea;color:#142d24;font-size:14px;text-align:center}
+.dispatch-legal-note a{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.dispatch-legal-note a:hover{color:#235d3d}
+@media(max-width:970px){.dispatch-nav-cta{font-size:12px}.dispatch-hero{padding-top:40px}.topnav{gap:14px}}
+@media(max-width:650px){.site-header{height:auto;min-height:92px;gap:14px;padding-top:16px;padding-bottom:16px;align-items:flex-start}.topnav{flex-wrap:wrap;justify-content:flex-end;gap:9px}.topnav>a:not(.dispatch-nav-cta){display:none}.brand-word{font-size:23px}.brand-word small{font-size:7px;letter-spacing:1px}.dispatch-hero{padding-top:20px}.dispatch-actions .button{width:100%;min-height:54px}.dispatch-text-link{width:100%;justify-content:center}.dispatch-availability{font-size:12px}.dispatch-legal-note{padding:26px 5%}}
+@media(prefers-reduced-motion:reduce){.visual-orbit,.pulse,.window-signal{animation:none!important}}
+
+/* Keep the internal staff entry discoverable on mobile without changing customer navigation. */
+@media(max-width:650px){.topnav>a.dispatch-nav-staff{display:inline-flex!important;color:#b8f477;font-size:12px}}

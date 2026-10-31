@@ -1,7 +1,7 @@
 name: Delivery backend tests
 on:
   pull_request:
-    paths: ['delivery-functions/**', 'deliveries/**', 'firestore.rules', 'firebase.delivery.json', '.github/workflows/delivery-backend-tests.yml']
+    paths: ['delivery-functions/**', 'deliveries/**', 'dispatcher/**', 'firestore.rules', 'firebase.delivery.json', '.github/workflows/delivery-backend-tests.yml']
   push:
     branches: [main]
     paths: ['delivery-functions/**', 'deliveries/**', 'firestore.rules', 'firebase.delivery.json', '.github/workflows/delivery-backend-tests.yml']
@@ -24,7 +24,7 @@ jobs:
           java-version: '21'
       - run: npm install
       - run: npm install --prefix delivery-functions
-      - run: node --test tests/deliveries.test.mjs delivery-functions/tests/service.test.mjs
+      - run: node --test tests/deliveries.test.mjs delivery-functions/tests/service.test.mjs delivery-functions/tests/dispatcher-auth.test.mjs
       - name: Verify Functions export loads without credentials or configuration
         run: node -e "import('./delivery-functions/index.js')"
       - name: Test real Firestore transactions and client denial

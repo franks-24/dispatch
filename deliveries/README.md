@@ -1,6 +1,6 @@
-# Franks24 Deliveries — service preview and phase 2 backend
+# Franks24 Dispatch — customer delivery preview and phase 2 backend
 
-`/deliveries/` is a separately styled delivery experience. Dispatch at `/` remains the recruitment platform. No recruiting code, profile roles or Firestore rules are changed. This directory may later be extracted to its own repository/domain; do not assume a new domain has been configured.
+`/deliveries/` is the customer delivery preview for Dispatch, the courier/logistics service under Franks24. The public `/` now describes couriers, delivery booking and tracking. Historic recruitment code and Firestore rules remain untouched pending a separate security-reviewed migration. No additional domain has been configured.
 
 Implemented: responsive three-action landing page, Google session integration, quote request form, issued-quote selection, collection request form, authenticated tracking timeline, latest shipment history and authenticated PDF proof download. No sample shipment or price is presented as real. No address, recipient, ID token or proof document is stored in localStorage. A named Firebase app with session persistence isolates delivery login from the recruitment app.
 
