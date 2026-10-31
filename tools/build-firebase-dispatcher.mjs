@@ -46,8 +46,8 @@ if(applicantEnabled&&(
  !policyVersion||policyVersion.toLowerCase().includes("draft")))
  throw Error("Applicant signup requires a reviewed, versioned driver policy.");
 await writeFile(new URL("driver/apply-config.js",target),
- "// Generated applicant-only staging gate. A server-side Google identity check remains mandatory.\\n"+
+ "// Generated applicant-only staging gate. A server-side Google identity check remains mandatory.\n"+
  "export const applicantConfig=Object.freeze("+JSON.stringify({
   enabled:applicantEnabled,policyVersion:applicantEnabled?policyVersion:""
- })+");\\n");
+ })+");\n");
 console.log("Applicant intake UI enabled: "+applicantEnabled+". Courier operations remain independently gated.");
