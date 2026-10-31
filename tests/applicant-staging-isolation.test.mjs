@@ -21,7 +21,12 @@ test("applicant Hosting sends all API requests exclusively to its deny-by-defaul
  assert.doesNotMatch(helper,/firebase\.dispatcher\.json/);
 });
 test("unapproved release record refuses applicant collection",async()=>{
- await assert.rejects(verifyDriverPolicyRelease({version:"driver-2026-10-31-v1"}),/approved driver policy release/);
+ const dir=await mkdtemp(join(tmpdir(),"f24-pending-"));
+ try{
+  await mkdir(join(dir,"docs"));
+  await writeFile(join(dir,"docs/driver-policy-release.json"),JSON.stringify({status:"pending_legal_approval",version:"driver-2026-10-31-v1"}));
+  await assert.rejects(verifyDriverPolicyRelease({root:pathToFileURL(dir+sep),version:"driver-2026-10-31-v1"}),/approved driver policy release/);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
 test("approved record requires exact unchanged, effective policy documents",async()=>{
  const dir=await mkdtemp(join(tmpdir(),"f24-policy-"));
@@ -41,6 +46,16 @@ test("approved record requires exact unchanged, effective policy documents",asyn
   await writeFile(join(dir,"docs/driver-policy-release.json"),JSON.stringify(release));
   const options={root:base,version:release.version,now:Date.parse("2026-10-31T00:00:00Z")};
   assert.match((await verifyDriverPolicyRelease(options)).releaseSha256,/^[a-f0-9]{64}$/);
+  for(const patch of [
+   {approvedAt:null},{effectiveAt:0},{effectiveAt:"2099-01-01T00:00:00Z"},
+   {approvedBy:""},{approvalReference:"pending"},{version:"wrong-version"},
+   {documents:{}},{status:"pending_legal_approval"}
+  ]){
+   await writeFile(join(dir,"docs/driver-policy-release.json"),JSON.stringify({...release,...patch}));
+   await assert.rejects(verifyDriverPolicyRelease(options));
+  }
+  await assert.rejects(verifyDriverPolicyRelease({...options,now:NaN}),/verification time/);
+  await writeFile(join(dir,"docs/driver-policy-release.json"),JSON.stringify(release));
   await writeFile(join(dir,paths[0]),"<h1>Tampered policy</h1>");
   await assert.rejects(verifyDriverPolicyRelease(options),/checksum mismatch/);
   await writeFile(join(dir,paths[0]),"<h1>POLICY DRAFT</h1>");
@@ -55,5 +70,8 @@ test("closed staging tree has no operational UI and no active Google collection"
  assert.match(await readFile(new URL("driver/apply-config.js",dir),"utf8"),/"enabled":false/);
  for(const path of ["dispatcher/index.html","operations/index.html","driver/index.html","deliveries/index.html","workspaces/app.js"])
   await assert.rejects(access(new URL(path,dir)),/ENOENT/);
+ for(const path of paths)assert.equal(await readFile(new URL(path,dir),"utf8"),await readFile(new URL(path,root),"utf8"),"Published legal document must remain byte-identical");
+ assert.doesNotMatch(await readFile(new URL("driver/apply.html",dir),"utf8"),/href="\.\.\/(dispatcher|operations|driver|deliveries)\/"/);
+ await access(new URL("deliveries/styles.css",dir));
  assert.match(await readFile(new URL("404.html",dir),"utf8"),/Not available in applicant staging/);
 });

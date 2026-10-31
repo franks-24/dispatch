@@ -24,6 +24,8 @@ jobs:
       - run: npm run test:onboarding && npm run test:site && npm run test:identity:unit && npm run test:deliveries && npm run test:dispatcher && npm run test:release
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:identity
+      - name: Verify generated applicant-only mobile site
+        run: npm run test:applicants:mobile
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -9,6 +9,7 @@ const value=entry=>typeof entry==="string"&&entry.trim().length>=3&&
 export async function verifyDriverPolicyRelease({
  root=new URL("../",import.meta.url),version,now=Date.now()
 }={}){
+ if(!Number.isFinite(now))throw Error("Invalid policy verification time.");
  if(!value(version)||/draft|test|sample/i.test(version))throw Error("An immutable approved driver policy version is required.");
  const contents=await readFile(new URL("docs/driver-policy-release.json",root),"utf8");
  let release;
@@ -19,6 +20,8 @@ export async function verifyDriverPolicyRelease({
                      "retentionScheduleReference","popiaReviewReference"])
   if(!value(release[field]))throw Error("Approved driver policy release is missing "+field+".");
  for(const field of ["approvedAt","effectiveAt"]){
+  if(typeof release[field]!=="string"||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(release[field]))
+   throw Error("Policy release requires a UTC timestamp for "+field+".");
   const date=Date.parse(release[field]);
   if(!Number.isFinite(date)||date>now)throw Error("Policy release has no effective past "+field+".");
  }

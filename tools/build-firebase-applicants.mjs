@@ -1,5 +1,5 @@
 // Applicant-only output: never copy privileged operational or customer pages.
-import {cp,mkdir,rm,writeFile} from "node:fs/promises";
+import {cp,mkdir,rm,writeFile,readFile} from "node:fs/promises";
 import {spawnSync} from "node:child_process";
 import {fileURLToPath} from "node:url";
 import {dirname} from "node:path";
@@ -8,20 +8,33 @@ const root=new URL("../",import.meta.url);
 const target=new URL("../.firebase-applicants-public/",import.meta.url);
 const enabled=process.env.ENABLE_APPLICANT_UI==="true";
 const version=process.env.DISPATCH_DRIVER_POLICY_VERSION||"";
+await rm(target,{recursive:true,force:true});
 if(enabled){
  if(process.env.DISPATCH_POLICIES_APPROVED!=="true")throw Error("Human-approved policies are required.");
  await verifyDriverPolicyRelease({version});
 }
-await rm(target,{recursive:true,force:true});
 const paths=[
  "driver/apply.html","driver/apply.js","assets/favicon.svg","assets/site-shell.css",
  "assets/site-shell.js","workspaces/styles.css","legal/delivery-terms.html",
- "legal/delivery-privacy.html","legal/delivery-data.html","deliveries/policies.html"
+ "legal/delivery-privacy.html","legal/delivery-data.html","deliveries/policies.html","deliveries/styles.css"
 ];
 for(const path of paths){
  const destination=new URL(path,target);
  await mkdir(dirname(fileURLToPath(destination)),{recursive:true});
  await cp(new URL(path,root),destination);
+}
+// Shared source pages link to workspaces that are deliberately absent here.
+// Keep all applicant-build navigation within the isolated public tree.
+for(const path of ["driver/apply.html","deliveries/policies.html"]){
+ const file=new URL(path,target);
+ let html=await readFile(file,"utf8");
+ html=html.replace(/<nav class="f24-nav"[\s\S]*?<\/nav>/,
+  '<nav class="f24-nav" id="f24-navigation" aria-label="Main navigation"><a href="/">Home</a><a href="/driver/apply.html">Driver application</a><a href="/deliveries/policies.html">Policy status</a></nav>');
+ html=html.replace(/<a class="button" href="\.\/">Go to driver workspace<\/a>/,
+  '<p>Operational access is not available on this applicant site.</p>');
+ html=html.replace(/href="(?:\.\.\/)?deliveries\/#account-panel"/g,'href="/deliveries/policies.html"');
+ if(path==="deliveries/policies.html")html=html.replace('<a href="./">Return to deliveries →</a>','<a href="/driver/apply.html">Return to driver application →</a>');
+ await writeFile(file,html);
 }
 const config=new URL("assets/config.js",target);
 if(enabled){
