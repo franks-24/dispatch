@@ -27,4 +27,6 @@ jobs:
           node --check tests/identity/operations.spec.mjs
       - name: Build closed Firebase staging
         run: node tools/build-firebase-dispatcher.mjs
+      - name: Verify applicant-only deployment helper without cloud changes
+        run: node tools/deploy-applicants-staging.mjs
 
