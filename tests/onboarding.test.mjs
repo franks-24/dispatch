@@ -6,7 +6,7 @@ const source=path=>readFile(new URL("../"+path,import.meta.url),"utf8");
 test("Franks24 is primary brand; Dispatch is courier service, not recruiting",async()=>{
  const html=await source("index.html");
  assert.match(html,/<title>Franks24 \| Dispatch and Delivery Tracking<\/title>/);
- assert.match(html,/DISPATCH · COURIER &amp; LOGISTICS/);
+ assert.match(html,/Dispatch is a Franks24 service/);
  assert.match(html,/meta name="robots" content="noindex"/);
  assert.doesNotMatch(html,/I'm hiring|Post a job|job seeker|find work|apply for opportunities|opportunity for people/i);
  assert.doesNotMatch(html,/assets\/app\.js|data-login/,"legacy recruitment auth must not run on public root");
@@ -14,8 +14,8 @@ test("Franks24 is primary brand; Dispatch is courier service, not recruiting",as
 test("quote, booking and tracking all link to the disabled customer preview",async()=>{
  const html=await source("index.html");
  for(const fragment of ["quote","booking","tracking"])assert.ok(html.includes('href="./deliveries/#'+fragment+'"'));
- assert.match(html,/Live quote requests, bookings and payments are not yet active/);
- assert.match(html,/href="\.\/deliveries\/#workspace"/);
+ assert.match(html,/Live quotes, bookings and payments are not open yet/);
+ assert.match(html,/href="\.\/deliveries\/"/);
  assert.match(html,/href="\.\/deliveries\/policies\.html"/);
 });
 test("delivery capture remains editable while live requests stay closed before approval",async()=>{
@@ -37,4 +37,3 @@ test("delivery policy remains unapproved and explains GPS/proof risks",async()=>
  assert.match(html,/Proof of delivery/);
  assert.match(html,/retention periods/);
 });
-

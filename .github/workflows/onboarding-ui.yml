@@ -16,6 +16,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate onboarding and current legal release
-        run: npm run test:onboarding && npm run test:dispatcher
+        run: npm run test:onboarding && npm run test:site && npm run test:dispatcher
       - name: Validate public Firebase config injection
         run: npm run test:config

@@ -1,0 +1,36 @@
+import {test,expect} from "@playwright/test";
+import {googleFixture,json} from "./portal-fixture.mjs";
+test("dispatcher inbox copies into the visible capture panel, saves and clears private data on logout",async({page})=>{
+ await googleFixture(page);await page.route("**/dispatcher/config.js",route=>route.fulfill({contentType:"text/javascript",body:'export const dispatcherConfig={enabled:true,sessionApi:"/api/dispatcher/session"};'}));
+ const items=[];const tracking="F24-20261031-AAAAAAAAAAAAAA";
+ await page.route("**/api/dispatcher/**",async route=>{
+  const request=route.request(),path=new URL(request.url()).pathname;
+  expect(request.headers().authorization).toBe("Bearer fixture-token");
+  if(path.endsWith("/session"))return json(route,{role:"dispatcher",workspace:"dispatcher"});
+  if(path.includes("/whatsapp/"))return json(route,{drafts:[{id:"message1",status:"needs_review",receivedAt:"2026-10-31T10:00:00Z",text:"Test product order",suggestion:{itemDescription:"Fixture parcel",sku:"TEST-1",quantity:2}}]});
+  if(request.method()==="POST"){const body=request.postDataJSON();expect(body.name).toBe("Fixture parcel");items.push({...body,tracking,status:"registered",createdAt:"2026-10-31T10:00:00Z"});return json(route,{item:items[0]},201);}
+  return json(route,{items});
+ });
+ await page.goto("/dispatcher/");await page.locator("#staff-login").click();await expect(page.locator("#staff-workspace")).toBeVisible();
+ await page.getByRole("tab",{name:"WhatsApp inbox",exact:true}).click();await expect(page.locator("#whatsapp-panel")).toBeVisible();
+ await page.getByRole("button",{name:"Use product details in capture form"}).click();await expect(page.locator("#inventory-panel")).toBeVisible();await expect(page.locator("#whatsapp-panel")).toBeHidden();await expect(page.locator("#item-name")).toHaveValue("Fixture parcel");
+ await page.locator("#inventory-save").click();await expect(page.locator("#inventory-status")).toContainText("Saved inventory item "+tracking);await page.getByText("Recent inventory and search",{exact:true}).click();await expect(page.locator("#inventory-list")).toContainText(tracking);
+ await expect(page.getByRole("link",{name:/Open dispatch queue/})).toHaveAttribute("href","../operations/#jobs");
+ await page.locator("#staff-logout").click();await expect(page.locator("#staff-workspace")).toBeHidden();await expect(page.locator("#inventory-list")).toBeEmpty();await expect(page.locator("#whatsapp-drafts")).toBeEmpty();
+});
+test("operations queue deep link survives sign-in and a late old-tab response cannot replace the current view",async({page})=>{
+ await googleFixture(page);await page.route("**/workspaces/config.js",route=>route.fulfill({contentType:"text/javascript",body:'export const operationsConfig={enabled:true,policyVersion:"fixture-approved"};'}));
+ let releaseQuote;
+ await page.route("**/api/operations/**",async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith("/session"))return json(route,{role:"dispatcher",canReview:false,canReconcile:false});
+  if(path.endsWith("/quotes")){await new Promise(resolve=>{releaseQuote=resolve;});return json(route,{items:[{pickupArea:"Late old quote",deliveryArea:"Test",status:"pending",weightKg:1,service:"economy"}]});}
+  if(path.endsWith("/drivers"))return json(route,{items:[{id:"driver1",name:"Current fixture driver",status:"approved",region:"Test",vehicle:"car",validUntil:"2099-01-01"}]});
+  return json(route,{items:[]});
+ });
+ await page.goto("/operations/#jobs");await page.locator("#login").click();await expect(page.getByRole("button",{name:"Dispatch queue",exact:true})).toHaveAttribute("aria-pressed","true");
+ await page.getByRole("button",{name:"Quote requests",exact:true}).click();await expect.poll(()=>Boolean(releaseQuote)).toBe(true);
+ await page.locator("#tabs").getByRole("button",{name:"Drivers",exact:true}).click();await expect(page.locator("#content")).toContainText("Current fixture driver");
+ const response=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith("/quotes"));releaseQuote();await (await response).finished();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await expect(page.locator("#content")).toContainText("Current fixture driver");await expect(page.locator("#content")).not.toContainText("Late old quote");
+});

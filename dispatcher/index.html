@@ -2,25 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><meta name="theme-color" content="#0b1722">
+<meta name="robots" content="noindex">
 <meta name="description" content="Franks24 Dispatch internal staff workspace preview. Access requires verified Google Workspace Directory membership.">
 <title>Dispatcher staff workspace | Franks24</title>
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
 <link rel="stylesheet" href="../assets/styles.css">
 <link rel="stylesheet" href="./styles.css">
 <script type="module" src="./app.js"></script>
+<!-- f24-assets:start -->
+<meta name="theme-color" content="#182b22"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/site-shell.css"><script type="module" src="../assets/site-shell.js"></script>
+<!-- f24-assets:end -->
 </head>
-<body>
+<body class="f24-app">
 <a class="skip" href="#main">Skip to main content</a>
-<header class="staff-header">
-<a href="../" class="staff-brand">FRANKS24 <span>/ DISPATCHER</span></a>
-<a href="../deliveries/">Customer delivery preview ↗</a>
-</header>
+<!-- f24-header:start -->
+<div class="f24-status-bar"><span><i class="f24-status-dot" aria-hidden="true"></i>Franks24 Dispatch · Service preview</span><a href="../deliveries/policies.html">Launch &amp; policy status ↗</a></div>
+<header class="f24-header"><a class="brand f24-brand" href="../" aria-label="Franks24 home"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 7h27l-5 8H17v5h13l-5 8h-8v9H7z" fill="currentColor"/><path d="m26 30 8-13v13z" fill="currentColor"/></svg><span>Franks24<small>DISPATCH</small></span></a><button class="f24-menu" type="button" aria-expanded="false" aria-controls="f24-navigation" aria-label="Toggle navigation">Menu<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><nav class="f24-nav" id="f24-navigation" aria-label="Main navigation"><a href="../">Home</a><a href="../deliveries/">Delivery desk</a><a href="../driver/">Drivers</a><a href="../dispatcher/" aria-current="page">Dispatcher</a><a href="../operations/">Operations</a></nav></header>
+<!-- f24-header:end -->
 <main id="main" class="staff-main">
 <section class="staff-card" aria-labelledby="staff-heading">
 <p class="eyebrow"><span class="eyebrow-dot"></span> INTERNAL GOOGLE WORKSPACE DIRECTORY</p>
 <h1 id="staff-heading">Dispatcher<span class="accent-star">✳</span></h1>
-<p class="staff-lead">Frank and other approved staff each sign in with their own Google Workspace account. Select your account once, then enter the dispatch desk directly when your permissions are verified.</p>
+<p class="staff-lead">Capture inventory and review incoming order messages. Sign in with your own approved Google Workspace account.</p>
 <div class="staff-status" id="staff-status" role="status" aria-live="polite">Dispatcher staff access is currently restricted until the directory backend is ready.</div>
 <div class="staff-actions"><button id="staff-login" class="button button-primary button-large" type="button" disabled>Continue with Google ↗</button>
 <button id="staff-logout" class="button button-outline button-large" type="button" hidden>Sign out</button></div>
@@ -29,14 +32,10 @@
  <div><p class="staff-workspace-label">FRANKS24 / DISPATCH</p><h2>Dispatch desk</h2><p class="staff-workspace-account">Signed in as <strong id="staff-account"></strong></p></div>
  <span class="staff-verified">Staff verified</span>
 </div>
-<p class="staff-workspace-notice">Your identity is verified. Dispatch operations are not live yet; these shortcuts will become available only when the protected delivery backend is deployed.</p>
-<div class="staff-task-grid" aria-label="Upcoming dispatcher actions">
- <div class="staff-task"><strong>01 · New delivery</strong><span>Capture sender, recipient and parcel details.</span><a class="staff-task-link" href="#inventory-panel">Scan inventory item ↗</a></div>
- <div class="staff-task"><strong>02 · Active deliveries</strong><span>See today's jobs and assign a verified driver.</span><button type="button" disabled title="Delivery backend is not live">Open dispatch queue · Coming soon</button></div>
- <div class="staff-task"><strong>03 · Track a delivery</strong><span>Find a parcel and view verified tracking events.</span><button type="button" disabled title="Delivery backend is not live">Open tracking · Coming soon</button></div>
-</div>
+<p class="staff-workspace-notice">Inventory and message intake use protected endpoints. Operations and customer tracking each verify their own access.</p>
+<nav class="f24-inline-actions" aria-label="Dispatcher shortcuts"><a class="button secondary" href="../operations/#jobs">Open dispatch queue ↗</a><a class="f24-section-link" href="../deliveries/#tracking">Track a delivery ↗</a></nav>
 
-<section id="inventory-panel" class="inventory-panel" aria-labelledby="inventory-title" hidden>
+<div data-panel-group data-default-panel="inventory-panel"><nav class="f24-panel-nav" role="tablist" aria-label="Dispatcher tasks"><button type="button" id="tab-inventory-panel" role="tab" aria-controls="inventory-panel" aria-selected="false" data-f24-tab="inventory-panel">Scan inventory item</button><button type="button" id="tab-whatsapp-panel" role="tab" aria-controls="whatsapp-panel" aria-selected="false" data-f24-tab="whatsapp-panel">WhatsApp inbox</button></nav><section id="inventory-panel" data-f24-panel role="tabpanel" aria-labelledby="tab-inventory-panel" class="inventory-panel" aria-labelledby="inventory-title" hidden>
  <div class="inventory-intro"><div><p class="staff-workspace-label">MOBILE CAPTURE</p>
  <h3 id="inventory-title">Scan &amp; document inventory</h3>
  <p>Scan a barcode or enter it manually. Every saved item receives its own Franks24 tracking reference. A SKU identifies the product, not the individual dispatch.</p></div></div>
@@ -67,14 +66,14 @@
   <button class="button button-primary" id="inventory-save" type="submit">Save item &amp; generate tracking reference</button><button id="inventory-skip-photo" type="button" hidden>Keep saved item without a photo</button>
  </form>
  <div id="inventory-status" class="inventory-status" role="status" aria-live="polite">Waiting for verified dispatcher access.</div>
- <div class="inventory-list-head"><h3>Recent inventory</h3>
+ <details class="f24-disclosure"><summary>Recent inventory and search</summary><div class="inventory-list-head"><h3>Recent inventory</h3>
   <button type="button" id="inventory-refresh">Refresh</button></div>
  <div class="inventory-field"><label for="inventory-search">Find by tracking number, SKU or barcode</label>
   <input id="inventory-search" type="search" placeholder="Search recent items"></div>
  <div id="inventory-list" class="inventory-list" aria-live="polite"></div>
- <p class="inventory-footnote">Status updates are staff-confirmed records, not automatic courier tracking. AI-assisted label reading is a future opt-in enhancement and cannot approve dispatches.</p>
+ </details><p class="inventory-footnote">Status updates are staff-confirmed records, not automatic courier tracking. AI-assisted label reading is a future opt-in enhancement and cannot approve dispatches.</p>
 </section>
-<section id="whatsapp-panel" class="inventory-panel" aria-labelledby="whatsapp-title" hidden>
+<section id="whatsapp-panel" data-f24-panel role="tabpanel" aria-labelledby="tab-whatsapp-panel" class="inventory-panel" aria-labelledby="whatsapp-title" hidden>
  <p class="staff-workspace-label">WHATSAPP INTAKE · STAFF REVIEW</p>
  <h3 id="whatsapp-title">Forwarded orders and instructions</h3>
  <p>Messages forwarded to the approved Franks24 Business WhatsApp number appear here as drafts. Product details can be copied to the inventory form. Pickup addresses, delivery times and driver names remain suggestions until a dispatcher verifies them.</p>
@@ -84,11 +83,13 @@
  <div id="whatsapp-status" class="inventory-status" role="status" aria-live="polite">Inbox not activated.</div>
  <div id="whatsapp-drafts" class="inventory-list"></div>
  <p class="inventory-footnote">Do not forward unnecessary personal information. Franks24 must publish an appropriate privacy notice and configure its official WhatsApp Business webhook before receiving messages.</p>
-</section>
+</section></div>
 </div>
-<p class="staff-footnote">To use another approved staff account, select <strong>Switch Google account</strong> after sign-in. Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
+<details class="f24-disclosure"><summary>Staff sign-in and permission checks</summary><p class="staff-footnote">To use another approved staff account, select <strong>Switch Google account</strong> after sign-in. Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p></details>
 </section>
 </main>
-<footer class="staff-footer">FRANKS24 / DISPATCH · STAFF ACCESS CONTROLLED</footer>
+<!-- f24-footer:start -->
+<footer class="f24-footer"><div class="f24-footer-top"><div><a class="f24-footer-brand" href="../">franks24<small>DISPATCH</small></a><p>Good things, on the move.</p></div><nav aria-label="Policies and support"><a href="../legal/delivery-terms.html">Terms &amp; conditions</a><a href="../legal/delivery-privacy.html">Privacy notice</a><a href="../legal/delivery-data.html">Data ownership &amp; use</a><a href="../deliveries/policies.html">Delivery policy drafts</a><a href="../deliveries/#account-panel">Privacy requests</a></nav></div><div class="f24-footer-bottom"><span>© 2026 Franks24 · Dispatch is a Franks24 service.</span><span>Policies are drafts pending operator and legal review.</span><a href="#main">Back to content ↑</a></div></footer>
+<!-- f24-footer:end -->
 </body></html>
 

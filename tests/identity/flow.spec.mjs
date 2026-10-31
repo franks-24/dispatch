@@ -25,11 +25,13 @@ test("delivery preview accepts clicks and typing without sending live requests",
  await expect(pickup).toHaveValue("1 Test Street, Johannesburg");
  await expect(page.locator("#quote-availability")).toContainText("issued quote is required");
  await page.locator("#terms").check();await expect(page.locator("#terms")).toBeChecked();
+ await page.getByRole("tab",{name:"Get a quote",exact:true}).click();
  const form=page.locator("#quote-form");
  for(const [name,value] of Object.entries({pickupArea:"Johannesburg 2001",deliveryArea:"Pretoria 0002",weightKg:"1",lengthCm:"20",widthCm:"15",heightCm:"10"}))await form.locator('[name="'+name+'"]').fill(value);
  await form.locator('[name="service"]').selectOption("express");
  await form.getByRole("button",{name:/Request a quote/}).click();
  await expect(form.locator(".form-message")).toContainText("nothing has been sent");
+ await page.getByRole("tab",{name:"Track a delivery",exact:true}).click();
  await page.locator('#tracking-form [name="reference"]').fill("F24-TEST");
  await page.locator('#tracking-form button').click();
  await expect(page.locator('#tracking-form .form-message')).toContainText("not open yet");

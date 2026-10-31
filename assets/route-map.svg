@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="620" viewBox="0 0 660 620">
+<defs><pattern id="grid" width="124" height="105" patternUnits="userSpaceOnUse" patternTransform="rotate(-25 330 310)"><path d="M8 8h108v89H8z" fill="#dde6d7" stroke="#c6d4bf" stroke-width="1"/><path d="M20 20h38v28H20zm50 0h34v28H70zM20 59h84v26H20z" fill="#cfdcc9"/><path d="M0 0h124v105H0z" fill="none" stroke="#f3f4e9" stroke-width="13"/></pattern><filter id="shadow"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#23382d" flood-opacity=".15"/></filter></defs>
+<rect width="660" height="620" fill="#e6ecde"/><rect x="-150" y="-150" width="960" height="920" fill="url(#grid)"/>
+<path d="M-40 467C73 402 123 481 211 419s46-140 147-143 122 73 216 10 79-106 130-134" fill="none" stroke="#bfceae" stroke-width="70"/>
+<path d="M-40 467C73 402 123 481 211 419s46-140 147-143 122 73 216 10 79-106 130-134" fill="none" stroke="#afc7ac" stroke-width="35"/>
+<path d="M-40 467C73 402 123 481 211 419s46-140 147-143 122 73 216 10 79-106 130-134" fill="none" stroke="#bfd0b8" stroke-width="24"/>
+<path d="M-25 120 683 460M150-10l-50 650M500-10 346 640" fill="none" stroke="#f7f6ec" stroke-width="26"/>
+<path d="M-25 120 683 460M150-10l-50 650M500-10 346 640" fill="none" stroke="#d8dfcd" stroke-width="2"/>
+<path d="m197 167 43-20 61 30-43 21zM405 413l60-28 42 20-60 28zM435 83l53-25 44 21-53 25z" fill="#a9bf97"/>
+<g fill="#a9be99"><circle cx="225" cy="175" r="11"/><circle cx="247" cy="171" r="10"/><circle cx="270" cy="178" r="10"/><circle cx="454" cy="415" r="11"/><circle cx="477" cy="408" r="12"/><circle cx="464" cy="85" r="10"/><circle cx="487" cy="78" r="10"/></g>
+<path d="M141 214 265 273 294 214 461 295 432 356 529 403" fill="none" stroke="#fffef3" stroke-width="18" stroke-linejoin="round"/>
+<path d="M141 214 265 273 294 214 461 295 432 356 529 403" fill="none" stroke="#253e2d" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M141 214 265 273 294 214 461 295 432 356 529 403" fill="none" stroke="#cce864" stroke-width="3" stroke-dasharray="8 11" stroke-linejoin="round"/>
+<g filter="url(#shadow)"><circle cx="141" cy="214" r="17" fill="#263e2f" stroke="#fffef3" stroke-width="6"/><circle cx="141" cy="214" r="5" fill="#d6f36b"/><circle cx="529" cy="403" r="19" fill="#d6f36b" stroke="#fffef3" stroke-width="6"/><path d="m523 403 4 4 8-9" fill="none" stroke="#263e2f" stroke-width="3"/></g>
+<g font-family="sans-serif" font-size="10" font-weight="500" fill="#6d8069" letter-spacing="2"><text x="29" y="385" transform="rotate(-25 29 385)">YOUR NEIGHBOURHOOD</text><text x="424" y="197" transform="rotate(26 424 197)">THE NEXT CHAPTER</text></g>
+</svg>
