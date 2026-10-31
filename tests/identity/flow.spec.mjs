@@ -40,10 +40,9 @@ test("live custom domain responds, checking new copy only once published",async(
  const response=await page.goto("https://dispatch.franks24.com/",{waitUntil:"domcontentloaded"});
  expect(response?.status()).toBe(200);
  await expect(page.locator("#hero-heading")).toBeVisible();
- if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
-  await expect(page).toHaveTitle("Franks24 | Dispatch and Delivery Tracking");
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- }
+ // This checks reachability only. The post-deployment verifier waits for the
+ // exact GitHub commit manifest before requiring production content to match.
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath("live-custom-domain.png"),fullPage:true});
 });
 

@@ -12,7 +12,6 @@ assert.equal(response.status,200,"Custom domain must return HTTP 200");
 assert.equal(new URL(response.url).protocol,"https:","Final site must use HTTPS");
 const html=await response.text();
 report.liveLandingIsCourier=html.includes('<title>Franks24 | Dispatch and Delivery Tracking</title>');
-if(process.env.VERIFY_PUBLISHED_SOURCE==='true')assert.ok(report.liveLandingIsCourier,'Published landing must describe the courier service');
 report.httpStatus=response.status;
 report.assets=[];
 for(const path of [...new Set([...html.matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)].map(match=>match[1]))]){
@@ -26,16 +25,41 @@ async function readLiveConfig(){return parseConfig(await (await fetch(origin+"/a
 let liveConfig=await readLiveConfig();
 const expectedConfig=JSON.parse(await readFile("assets/firebase-config.public.json","utf8"));
 report.firebaseConfigured=!!liveConfig?.apiKey;
+// The Pages workflow embeds the exact commit into its uploaded artifact.
+// Wait for the revision on the custom domain instead of comparing raw HTML
+// bytes, which can differ under CDN processing and independent workflow timing.
 if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
- const expected=await readFile("index.html","utf8");let matched=false;
- for(let attempt=0;attempt<12;attempt++){
-  const remote=await (await fetch(origin+"/?verify="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(15000)})).text();
-  liveConfig=await readLiveConfig();
-  if(remote===expected&&liveConfig?.appId===expectedConfig.appId&&liveConfig?.apiKey===expectedConfig.apiKey){matched=true;break}
-  await new Promise(resolve=>setTimeout(resolve,10000))
+ const expectedRevision=process.env.GITHUB_SHA;
+ assert.match(expectedRevision||"",/^[a-f0-9]{40}$/,"GitHub revision is required for production source checks.");
+ let matched=false,latest=null;
+ for(let attempt=0;attempt<36;attempt++){
+  const query="?verify="+Date.now()+"-"+attempt;
+  try{
+   const [releaseResponse,pageResponse]=await Promise.all([
+    fetch(origin+"/dispatch-release.json"+query,{cache:"no-store",signal:AbortSignal.timeout(15000)}),
+    fetch(origin+"/"+query,{cache:"no-store",signal:AbortSignal.timeout(15000)})
+   ]);
+   const release=releaseResponse.ok ? await releaseResponse.json() : null;
+   const liveHtml=pageResponse.ok ? await pageResponse.text() : "";
+   liveConfig=await readLiveConfig();
+   latest=release?.revision||null;
+   if(release?.schemaVersion===1 && release?.product==="franks24-dispatch" &&
+       release.revision===expectedRevision && pageResponse.ok &&
+       liveHtml.includes('<title>Franks24 | Dispatch and Delivery Tracking</title>') &&
+       liveConfig?.appId===expectedConfig.appId &&
+       liveConfig?.apiKey===expectedConfig.apiKey){
+    matched=true;break;
+   }
+  }catch{ /* Publishing or CDN propagation may still be in progress. */ }
+  if(attempt<35)await new Promise(resolve=>setTimeout(resolve,7000));
  }
- assert.ok(matched,"Published courier landing and public Firebase settings have not reached the custom domain");
- report.publishedLandingMatches=true;report.firebaseConfigured=true;
+ report.publishedRevision=latest;
+ report.expectedRevision=expectedRevision;
+ report.publishedSourceMatches=matched;
+ report.firebaseConfigured=!!liveConfig?.apiKey;
+ await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
+ assert.ok(matched,"Expected release revision and Firebase web config have not reached the custom domain.");
+ report.liveLandingIsCourier=true;
 }
 // This is the same read-only project lookup used by the Firebase Web SDK to validate origins.
 const authResponse=await fetch("https://identitytoolkit.googleapis.com/v1/projects?key="+encodeURIComponent(expectedConfig.apiKey),{signal:AbortSignal.timeout(15000)});

@@ -66,3 +66,9 @@ To preview locally, run `python3 -m http.server 8080` and visit http://localhost
 Internal staff use [Dispatcher staff preview](https://dispatch.franks24.com/dispatcher/) rather than the public customer delivery desk. The staff sign-in is **closed by default**. Only a verified, active Google Workspace Directory user in the designated Dispatcher group may receive a server-approved `dispatcher` session. No employee is granted Dispatcher privileges solely by a matching email suffix, a self-selected role or a legacy recruitment account.
 
 The server-side authorizer is implemented in `delivery-functions/dispatcher-auth.js`, with negative-access tests. Google Workspace customer ID, authorized Dispatcher group, Directory API delegated identity and same-origin session endpoint require administrator configuration. The staff preview remains locked until these checks work and production Google SSO is verified. See [Dispatcher identity specification](docs/dispatcher-workspace-identity.md).
+
+## Deployment integrity
+
+GitHub Pages publishes only an allowlisted static staging directory. CI creates a public `dispatch-release.json` inside the uploaded artifact containing `{schemaVersion,product,revision}`. The post-merge identity check waits until the custom domain serves the expected `GITHUB_SHA`, then checks the courier landing and public Firebase app configuration. This avoids brittle byte-for-byte HTML comparisons and deployment race conditions. The manifest contains no secrets. See `tools/write-release-manifest.mjs`, `tests/release-manifest.test.mjs`, and `scripts/verify-dispatch-live.mjs`.
+
+A successful release-marker check does **not** prove real Google OAuth sign-in; production authorized-domain and Directory membership activation remain tracked in issues #13 and #14.
