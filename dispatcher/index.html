@@ -20,15 +20,23 @@
 <section class="staff-card" aria-labelledby="staff-heading">
 <p class="eyebrow"><span class="eyebrow-dot"></span> INTERNAL GOOGLE WORKSPACE DIRECTORY</p>
 <h1 id="staff-heading">Dispatcher<span class="accent-star">✳</span></h1>
-<p class="staff-lead">A dedicated staff entry point for verified members of the internal Workspace directory. Customer and driver accounts do not inherit Dispatcher access.</p>
-<div class="staff-status" id="staff-status" role="status" aria-live="polite">Staff sign-in preview is disabled pending authorized-directory, backend and security verification.</div>
+<p class="staff-lead">Frank and other approved staff each sign in with their own Google Workspace account. Select your account once, then enter the dispatch desk directly when your permissions are verified.</p>
+<div class="staff-status" id="staff-status" role="status" aria-live="polite">Dispatcher staff access is currently restricted until the directory backend is ready.</div>
 <div class="staff-actions"><button id="staff-login" class="button button-primary button-large" type="button" disabled>Continue with Google ↗</button>
 <button id="staff-logout" class="button button-outline button-large" type="button" hidden>Sign out</button></div>
 <div id="staff-workspace" class="staff-workspace" hidden>
-<h2>Internal Dispatcher access verified</h2>
-<p>The authenticated staff identity was validated by the server. Operational assignment, fleet and proof-of-delivery actions remain unavailable until separately implemented and authorized.</p>
+<div class="staff-workspace-head">
+ <div><p class="staff-workspace-label">FRANKS24 / DISPATCH</p><h2>Dispatch desk</h2><p class="staff-workspace-account">Signed in as <strong id="staff-account"></strong></p></div>
+ <span class="staff-verified">Staff verified</span>
 </div>
-<p class="staff-footnote">Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
+<p class="staff-workspace-notice">Your identity is verified. Dispatch operations are not live yet; these shortcuts will become available only when the protected delivery backend is deployed.</p>
+<div class="staff-task-grid" aria-label="Upcoming dispatcher actions">
+ <div class="staff-task"><strong>01 · New delivery</strong><span>Capture sender, recipient and parcel details.</span><button type="button" disabled title="Delivery backend is not live">Capture delivery · Coming soon</button></div>
+ <div class="staff-task"><strong>02 · Active deliveries</strong><span>See today's jobs and assign a verified driver.</span><button type="button" disabled title="Delivery backend is not live">Open dispatch queue · Coming soon</button></div>
+ <div class="staff-task"><strong>03 · Track a delivery</strong><span>Find a parcel and view verified tracking events.</span><button type="button" disabled title="Delivery backend is not live">Open tracking · Coming soon</button></div>
+</div>
+</div>
+<p class="staff-footnote">To use another approved staff account, select <strong>Switch Google account</strong> after sign-in. Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
 </section>
 </main>
 <footer class="staff-footer">FRANKS24 / DISPATCH · STAFF ACCESS CONTROLLED</footer>
