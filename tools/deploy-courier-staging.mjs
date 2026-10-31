@@ -32,12 +32,13 @@ if(database.databaseEdition!=="STANDARD"||database.type!=="FIRESTORE_NATIVE")thr
 firebase(["functions:secrets:get","DISPATCH_DIRECTORY_SA_JSON","--json"],{capture:true});
 const settings={...Object.fromEntries(names.filter(n=>n!=="DISPATCH_STAGING_SITE").map(n=>[n,env[n]])),
  DELIVERY_ENABLED:"true",DISPATCH_SESSION_ENABLED:"true",DISPATCH_INVENTORY_ENABLED:"true",DISPATCH_OPERATIONS_ENABLED:"true",
+ DISPATCH_APPLICANTS_ENABLED:"true",DISPATCH_POLICIES_APPROVED:"true",
  DISPATCH_AI_ENABLED:"false",DISPATCH_WHATSAPP_ENABLED:"false"};
 await writeFile(new URL("../delivery-functions/.env.dispatch-1491f",import.meta.url),Object.entries(settings).map(([k,v])=>k+"="+JSON.stringify(v)).join("\n")+"\n",{mode:0o600});
 env.ENABLE_DISPATCHER_UI="true";env.ENABLE_OPERATIONS_UI="true";
-env.ENABLE_CUSTOMER_UI="true";env.DISPATCH_POLICIES_APPROVED="true";
+env.ENABLE_CUSTOMER_UI="true";env.ENABLE_APPLICANT_UI="true";env.DISPATCH_POLICIES_APPROVED="true";
 run(process.execPath,["tools/build-firebase-dispatcher.mjs"]);
 firebase(["target:apply","hosting","dispatcher-prototype",env.DISPATCH_STAGING_SITE]);
-firebase(["deploy","--config","firebase.dispatcher.json","--only","functions:franks24-deliveries:deliveriesApi,functions:franks24-deliveries:dispatcherApi,functions:franks24-deliveries:courierOperationsApi"]);
+firebase(["deploy","--config","firebase.dispatcher.json","--only","functions:franks24-deliveries:deliveriesApi,functions:franks24-deliveries:dispatcherApi,functions:franks24-deliveries:courierOperationsApi,functions:franks24-deliveries:driverApplicationsApi"]);
 firebase(["hosting:channel:deploy","courier-acceptance","--expires","7d","--only","dispatcher-prototype","--config","firebase.dispatcher.json"]);
 console.log("Preview deployed. Authorize its exact host for Google sign-in, then perform the real-account and private-storage acceptance runbook. No DNS or live Hosting channel was switched.");

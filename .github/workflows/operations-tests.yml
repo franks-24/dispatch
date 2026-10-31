@@ -19,9 +19,14 @@ jobs:
       - name: Validate server and browser syntax
         run: |
           node --check delivery-functions/operations-function.js
+          node --check delivery-functions/operations-service.js
+          node --check delivery-functions/applicants-function.js
+          node --check driver/apply.js
           node --check workspaces/app.js
           node --check deliveries/app.js
           node --check tests/identity/operations.spec.mjs
       - name: Build closed Firebase staging
         run: node tools/build-firebase-dispatcher.mjs
+      - name: Verify applicant-only deployment helper without cloud changes
+        run: node tools/deploy-applicants-staging.mjs
 

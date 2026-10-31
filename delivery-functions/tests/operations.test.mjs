@@ -15,7 +15,7 @@ function setup(enabled=true){
   saveProof:async({customerUid,shipmentId})=>({path:"delivery-proofs/"+hash(customerUid)+"/"+shipmentId+"/proof.pdf",generation:"123"})
  });
  const call=(actor,path,body,key)=>service.handle({method:body===undefined?"GET":"POST",path,headers:{authorization:"Bearer "+actor,"content-type":"application/json","idempotency-key":key||"request-"+(++serial)},body});
- const seedDriver=(uid="driver")=>store.data.set("dispatchDrivers/"+hash(uid),{id:hash(uid),uid,email:uid+"@test.invalid",name:uid,status:"approved",validUntil:future,vehicle:"car",region:"Johannesburg",createdAt:new Date(start).toISOString()});
+ const seedDriver=(uid="driver")=>store.data.set("dispatchDrivers/"+hash(uid),{id:hash(uid),uid,email:uid+"@test.invalid",name:uid,status:"approved",validUntil:future,policyVersion:"driver-policy-1",vehicle:"car",region:"Johannesburg",createdAt:new Date(start).toISOString()});
  const seedShipment=()=>{
   const path=customerPath("customer")+"/shipments/shipment";
   store.data.set(path,{id:"shipment",reference:"F24-TEST",status:"confirmed",carrierReference:"REAL-CARRIER",pickupArea:"Johannesburg",deliveryArea:"Pretoria",pickupAddress:"Private collection",deliveryAddress:"Private recipient",recipientName:"Test recipient",recipientPhone:"+27110000000",events:[],createdAt:new Date(start).toISOString()});
@@ -32,6 +32,45 @@ test("operations fail closed and reject non-Google, revoked and unverified ident
  for(const [uid,code]of [["invalid",401],["unverified",403],["password",403],["driver",403]])assert.equal((await s.call(uid,"/api/driver/session")).status,code);
  assert.equal((await s.call("driver","/api/operations/session")).status,503);
 });
+
+test("self-service applicant is verified, policy-bound, idempotent and isolated from trips",async()=>{
+ const s=setup(),path="/api/driver/application";
+ const initial=await s.call("driver",path);
+ assert.equal(initial.status,200);assert.equal(initial.body.application,null);
+ const body={name:"Test driver",region:"Johannesburg",vehicle:"bakkie",policyVersion:"driver-policy-1",
+  termsAccepted:true,privacyAcknowledged:true,dataUseAcknowledged:true};
+ assert.equal((await s.call("driver","/api/driver/jobs")).status,403);
+ assert.equal((await s.call("password",path,body)).status,403);
+ assert.equal((await s.call("unverified",path,body)).status,403);
+ assert.equal((await s.call("driver",path,{...body,termsAccepted:false})).status,400);
+ assert.equal((await s.call("driver",path,{...body,policyVersion:"outdated"})).status,400);
+ assert.equal((await s.call("driver",path,{...body,driverUid:"reviewer"})).status,400);
+ const first=await s.call("driver",path,body,"applicant-key-1");assert.equal(first.status,201);
+ assert.equal(first.body.application.status,"in_review");
+ assert.equal((await s.call("driver",path,body,"applicant-key-1")).body.application.id,first.body.application.id);
+ assert.equal((await s.call("driver",path,body,"another-key")).status,409);
+ assert.equal((await s.call("other",path)).body.application,null);
+ assert.equal((await s.call("driver","/api/driver/session")).status,403);
+ const queue=await s.call("reviewer","/api/operations/applications");
+ assert.equal(queue.status,200);assert.equal(queue.body.items.length,1);
+ assert.equal(queue.body.items[0].email,"driver@test.invalid");
+ assert.equal(queue.body.items[0].acceptedAt,new Date(start).toISOString());
+ const approve="/api/operations/applications/"+first.body.application.id+"/approve";
+ assert.equal((await s.call("reviewer",approve,{driverUid:"other",checks:s.checks(),prdpRequired:false,hold:false})).status,400);
+ assert.equal((await s.call("reviewer",approve,{driverUid:"driver",checks:s.checks(),prdpRequired:false,hold:false})).status,201);
+ assert.equal((await s.call("driver","/api/driver/session")).status,200);
+ assert.equal((await s.call("driver",path)).body.approved,true);
+ assert.equal((await s.call("driver",path,body,"new-key-3")).status,409);
+});
+test("changing the mandatory policy version denies previously approved drivers",async()=>{
+ const s=setup();s.seedDriver();
+ assert.equal((await s.call("driver","/api/driver/session")).status,200);
+ const path="dispatchDrivers/"+hash("driver"),prior=await s.store.get(path);
+ s.store.data.set(path,{...prior,policyVersion:"retired-policy"});
+ assert.equal((await s.call("driver","/api/driver/session")).status,403);
+ assert.equal((await s.call("driver","/api/driver/ledger")).status,403);
+});
+
 test("reviewer approval requires every verified unexpired criterion and matching separate identity",async()=>{
  const s=setup(),path="/api/operations/applications";
  assert.equal((await s.call("dispatcher",path,{name:"Driver",email:"driver@test.invalid",vehicle:"car",region:"Johannesburg"})).status,403);

@@ -39,3 +39,15 @@ if(process.env.ENABLE_CUSTOMER_UI==="true"){
  await writeFile(new URL("deliveries/config.js",target),
   "export const deliveryConfig=Object.freeze("+JSON.stringify({enabled:true,policiesApproved:true,apiBase:"/api/deliveries",policyVersion:customerPolicy})+");\n");
 }
+
+const applicantEnabled=process.env.ENABLE_APPLICANT_UI==="true";
+if(applicantEnabled&&(
+ process.env.DISPATCH_POLICIES_APPROVED!=="true"||
+ !policyVersion||policyVersion.toLowerCase().includes("draft")))
+ throw Error("Applicant signup requires a reviewed, versioned driver policy.");
+await writeFile(new URL("driver/apply-config.js",target),
+ "// Generated applicant-only staging gate. A server-side Google identity check remains mandatory.\n"+
+ "export const applicantConfig=Object.freeze("+JSON.stringify({
+  enabled:applicantEnabled,policyVersion:applicantEnabled?policyVersion:""
+ })+");\n");
+console.log("Applicant intake UI enabled: "+applicantEnabled+". Courier operations remain independently gated.");

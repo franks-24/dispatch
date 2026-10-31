@@ -12,6 +12,7 @@ const fields=(body,keys)=>requireValue(body&&typeof body==="object"&&!Array.isAr
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==="object"?Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])])):value;
 const digest=body=>hash(JSON.stringify(canonical(body)));
 const driverPath=uid=>"dispatchDrivers/"+hash(uid);
+const applicantPath=uid=>"dispatchDriverApplicantIntake/"+hash(uid);
 const jobPath=jobId=>"dispatchJobs/"+jobId;
 const queueEntry=(job,status,at)=>({id:hash(job.customerUid+":"+job.shipmentId),customerUid:job.customerUid,shipmentId:job.shipmentId,reference:job.reference,status,pickupArea:job.pickupArea,deliveryArea:job.deliveryArea,createdAt:job.createdAt,updatedAt:at});
 const activeStatuses=["accepted","collected","in_transit","out_for_delivery","exception"];
@@ -38,9 +39,57 @@ export function validateVetting(checks,{vehicle,prdpRequired,clock=Date.now}){
 export function createOperationsService({store,verifyToken,authorizeStaff,lookupUser,saveProof,
  enabled=false,policyVersion,managerUids=[],financeUids=[],clock=Date.now,uuid=randomUUID}){
  const headers={"Cache-Control":"private, no-store","Content-Type":"application/json","X-Content-Type-Options":"nosniff"};
- const approved=driver=>requireValue(driver?.status==="approved"&&Date.parse(driver.validUntil)>clock(),403,"Driver approval is missing, suspended or expired.");
+ const approved=driver=>requireValue(driver?.status==="approved"&&Date.parse(driver.validUntil)>clock()&&driver.policyVersion===policyVersion,403,"Driver approval, credentials or current policy acceptance are missing, suspended or expired.");
  const manager=actor=>requireValue(actor.staff&&managerUids.includes(actor.uid),403,"An authorized driver reviewer is required.");
  const finance=actor=>requireValue(actor.staff&&financeUids.includes(actor.uid),403,"An authorized finance reviewer is required.");
+ const publicApplication=(application,status)=>application?{
+  id:application.id,name:application.name,vehicle:application.vehicle,region:application.region,
+  status:status||application.status,createdAt:application.createdAt,
+  policyVersion:application.policyVersion
+ }:null;
+ // An applicant may see or create only their own review record. No trip, offer,
+ // payout, reviewer or evidence endpoint is available to an unapproved user.
+ async function applicantRequest(actor,method,body,key){
+  requireValue(!actor.staff,403,"Applicant access only.");
+  requireValue(typeof actor.email==="string"&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(actor.email),403,"A verified Google email is required.");
+  const path=applicantPath(actor.uid);
+  if(method==="GET"){
+   const [application,driver]=await Promise.all([store.get(path),store.get(driverPath(actor.uid))]);
+   const status=driver?.email===actor.email&&driver?.status==="approved"&&
+    driver?.policyVersion===policyVersion&&Date.parse(driver.validUntil)>clock()?"approved":
+    driver?.status==="suspended"?"suspended":undefined;
+   return {application:publicApplication(application,status),approved:status==="approved",policyVersion};
+  }
+  requireValue(method==="POST",405,"Method not allowed.");
+  requireValue(id(key)&&key.length>=8,400,"An idempotency key is required.");
+  fields(body,["name","region","vehicle","policyVersion","termsAccepted","privacyAcknowledged","dataUseAcknowledged"]);
+  const name=string(body.name,2,120),region=string(body.region,2,120);
+  requireValue(["bicycle","motorbike","car","bakkie","van"].includes(body.vehicle),400,"Select a supported vehicle.");
+  requireValue(body.policyVersion===policyVersion&&body.termsAccepted===true&&
+   body.privacyAcknowledged===true&&body.dataUseAcknowledged===true,400,
+   "Review and acknowledge the current approved driver policy and privacy terms.");
+  const fingerprint=digest(body);
+  return store.transaction(async tx=>{
+   const prior=await tx.get(path);
+   if(prior){
+    requireValue(prior.requestKey===key&&prior.requestDigest===fingerprint,409,
+     "An application already exists. View its status or contact driver support.");
+    return {application:publicApplication(prior)};
+   }
+   const existingDriver=await tx.get(driverPath(actor.uid));
+   requireValue(!existingDriver||existingDriver.status!=="approved",409,"An approved driver cannot submit a duplicate application.");
+   const applicationId=uuid(),at=new Date(clock()).toISOString();
+   const application={id:applicationId,applicantUid:actor.uid,name,email:actor.email,
+    vehicle:body.vehicle,region,status:"in_review",createdAt:at,createdBy:actor.uid,
+    policyVersion,termsAccepted:true,privacyAcknowledged:true,dataUseAcknowledged:true,
+    acceptedAt:at,source:"verified_google_self_service"};
+   tx.create("dispatchDriverApplications/"+applicationId,application);
+   tx.create(path,{...application,requestKey:key,requestDigest:fingerprint});
+   tx.create("dispatchOperationsAudit/"+uuid(),{actor:actor.uid,role:"applicant",
+    action:"driver-application-submitted",applicationId,policyVersion,createdAt:at});
+   return {application:publicApplication(application)};
+  });
+ }
  const metricPath=(driverId,at)=>"dispatchDrivers/"+driverId+"/metrics/"+at.slice(0,10);
  const metric=(prior,changes)=>Object.fromEntries(["offered","accepted","acceptanceMs","completed","onTime","proofCompliant","exceptions"].map(key=>[key,(prior?.[key]||0)+(changes[key]||0)]));
  async function driverGuard(tx,actor,jobId){
@@ -165,8 +214,9 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
     const application=await tx.get("dispatchDriverApplications/"+applicationId),prior=await tx.get(driverPath(body.driverUid));
     requireValue(application?.status==="in_review"&&(!prior||prior.email===application.email&&["approved","suspended"].includes(prior.status)),409,"Application is unavailable or identity needs independent review.");
     requireValue(user.email?.toLowerCase()===application.email,400,"Driver identity does not match the reviewed application.");
+    if(application.applicantUid)requireValue(application.applicantUid===body.driverUid&&application.policyVersion===policyVersion&&application.termsAccepted===true&&application.privacyAcknowledged===true&&application.dataUseAcknowledged===true,403,"The applicant must accept the current approved policy before review.");
     const validUntil=validateVetting(body.checks,{vehicle:application.vehicle,prdpRequired:body.prdpRequired,clock});
-    const driver={id:hash(body.driverUid),uid:body.driverUid,name:application.name,email:application.email,vehicle:application.vehicle,region:application.region,status:"approved",validUntil,createdAt:prior?.createdAt||at,approvedBy:actor.uid,applicationId,...(prior?{renewedAt:at,previousApplicationId:prior.applicationId||"prior-approved-record"}:{})};
+    const driver={id:hash(body.driverUid),uid:body.driverUid,name:application.name,email:application.email,vehicle:application.vehicle,region:application.region,status:"approved",validUntil,policyVersion,createdAt:prior?.createdAt||at,approvedBy:actor.uid,applicationId,...(prior?{renewedAt:at,previousApplicationId:prior.applicationId||"prior-approved-record"}:{})};
     tx.set("dispatchDriverApplications/"+applicationId,{...application,status:"approved",checks:body.checks,approvedAt:at,approvedBy:actor.uid,driverId:driver.id});
     if(prior)tx.set(driverPath(body.driverUid),driver);else tx.create(driverPath(body.driverUid),driver);
     return {driver:{id:driver.id,status:driver.status,validUntil}};
@@ -346,7 +396,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
    const staff=url.pathname.startsWith("/api/operations/");
    if(staff){const role=await authorizeStaff(token);requireValue(role?.uid===identity.uid&&role.role==="dispatcher",403,"Dispatcher access required.");}
    const actor={uid:identity.uid,email:identity.email?.toLowerCase(),staff};
-   if(!staff){const driver=await store.get(driverPath(actor.uid));approved(driver);requireValue(driver.email===actor.email,403,"Driver identity changed.");}
+   if(!staff&&url.pathname!=="/api/driver/application"){const driver=await store.get(driverPath(actor.uid));approved(driver);requireValue(driver.email===actor.email,403,"Driver identity changed.");}
    if(method==="POST"){
     requireValue(requestHeaders["content-type"]?.split(";")[0]==="application/json",415,"JSON required.");
     requireValue(Buffer.byteLength(JSON.stringify(body)||"")<=2900000,413,"Request too large.");
@@ -356,7 +406,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
     requireValue((limit?.count||0)<120,429,"Too many operations requests.");
     tx.set(path,{count:(limit?.count||0)+1,expiresAt:new Date((minute+120)*60000)});
    });
-   const result=await execute(actor,method,url,body,requestHeaders["idempotency-key"]);
+   const result=!staff&&url.pathname==="/api/driver/application"?await applicantRequest(actor,method,body,requestHeaders["idempotency-key"]):await execute(actor,method,url,body,requestHeaders["idempotency-key"]);
    return {status:method==="POST"?201:200,headers,body:result};
   }catch(error){
    const known=error instanceof HttpError||error instanceof DispatcherAccessError;

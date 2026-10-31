@@ -48,6 +48,13 @@
     ],
     "rewrites": [
       {
+        "source": "/api/driver/application",
+        "function": {
+          "functionId": "driverApplicationsApi",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "/api/driver/**",
         "function": {
           "functionId": "courierOperationsApi",

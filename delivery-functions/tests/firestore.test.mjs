@@ -56,7 +56,7 @@ test("Firestore pagination orders by created time and stays inside the customer'
 test("real Firestore permits one driver acceptance and one earning under concurrent retries",async()=>{
  const {createOperationsService}=await import("../operations-service.js"),{hash}=await import("../service.js");
  const uid="emulator-ops-driver",driverId=hash(uid),future=new Date(Date.now()+86400000).toISOString();
- await db.doc("dispatchDrivers/"+driverId).set({id:driverId,uid,email:uid+"@test.invalid",status:"approved",validUntil:future,createdAt:new Date().toISOString()});
+ await db.doc("dispatchDrivers/"+driverId).set({id:driverId,uid,email:uid+"@test.invalid",status:"approved",validUntil:future,policyVersion:"driver-approved-test",createdAt:new Date().toISOString()});
  await db.doc(customerPath("emulator-ops-customer")+"/shipments/ops-shipment").set({id:"ops-shipment",reference:"OPS-EMULATOR",status:"confirmed",carrierReference:"ACTUAL-TEST-CARRIER",pickupArea:"Johannesburg",deliveryArea:"Pretoria",events:[],createdAt:new Date().toISOString()});
  const service=createOperationsService({store,enabled:true,policyVersion:"driver-approved-test",
   verifyToken:async token=>({uid:token,email:token+"@test.invalid",email_verified:true,firebase:{sign_in_provider:"google.com"}}),
