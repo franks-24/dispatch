@@ -1,4 +1,7 @@
-# Dispatch identity activation and verification
+# Historical identity rollout guidance — recruitment prototype superseded
+
+> The worker/employer acceptance matrix below documents the original recruitment prototype and does **not** describe the Franks24 Dispatch courier identity model. The public landing no longer loads that UI. Refer to [product correction](product-correction-2026-10-31.md). Google provider/domain and general identity safety principles remain relevant, but do not activate recruitment onboarding as the courier application.
+
 
 The identity code and automated emulator tests do not themselves enable the production Google provider. The source originally exported a null public Firebase configuration. The project-specific public settings are now included in assets/firebase-config.public.json, recovered from the operator's Firebase setup transcript and confirmed against the public Auth project lookup. The publisher validates and injects them. The public Auth endpoint was checked on 2026-10-30 and still omitted dispatch.franks24.com from authorized domains; production activation remains required. Never claim live SSO until a real account has completed the Google provider handshake and the new/returning-user tests below.
 
