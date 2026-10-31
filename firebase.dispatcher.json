@@ -48,6 +48,13 @@
     ],
     "rewrites": [
       {
+        "source": "/webhooks/whatsapp",
+        "function": {
+          "functionId": "whatsappInbound",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "/api/dispatcher/**",
         "function": {
           "functionId": "dispatcherApi",
