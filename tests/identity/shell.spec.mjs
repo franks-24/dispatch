@@ -4,6 +4,7 @@ test("shared theme, responsive navigation and footer work across every portal",a
  let theme;
  for(const path of portals){
   await page.goto(path,{waitUntil:"domcontentloaded"});
+  await page.evaluate(async()=>{await document.fonts.ready;await Promise.all([...document.images].map(image=>image.decode().catch(()=>{})));});
   await expect(page.locator(".f24-header")).toBeVisible();
   expect(await page.locator(".f24-header").evaluate(el=>getComputedStyle(el).flexDirection)).toBe("row");
   await expect(page.locator(".f24-footer")).toHaveCount(1);
