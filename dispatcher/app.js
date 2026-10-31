@@ -13,7 +13,10 @@ const close=()=>{
  $("staff-workspace").hidden=true;
  $("staff-logout").hidden=true;
  $("staff-account").textContent="";
- login.textContent="Continue with Google ↗";
+ // Preserve the incident banner after initialization and rejected authorization.
+ // A public preview must not invite Google sign-in while the service is closed.
+ login.textContent=dispatcherConfig.enabled ? "Continue with Google ↗" : "Access paused — security review";
+ login.disabled=!dispatcherConfig.enabled;
 };
 
 async function authorize(user){
