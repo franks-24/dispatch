@@ -74,6 +74,17 @@
  <div id="inventory-list" class="inventory-list" aria-live="polite"></div>
  <p class="inventory-footnote">Status updates are staff-confirmed records, not automatic courier tracking. AI-assisted label reading is a future opt-in enhancement and cannot approve dispatches.</p>
 </section>
+<section id="whatsapp-panel" class="inventory-panel" aria-labelledby="whatsapp-title" hidden>
+ <p class="staff-workspace-label">WHATSAPP INTAKE · STAFF REVIEW</p>
+ <h3 id="whatsapp-title">Forwarded orders and instructions</h3>
+ <p>Messages forwarded to the approved Franks24 Business WhatsApp number appear here as drafts. Product details can be copied to the inventory form. Pickup addresses, delivery times and driver names remain suggestions until a dispatcher verifies them.</p>
+ <div class="inventory-list-head">
+  <strong>Recent inbound message drafts</strong><button type="button" id="whatsapp-refresh">Refresh inbox</button>
+ </div>
+ <div id="whatsapp-status" class="inventory-status" role="status" aria-live="polite">Inbox not activated.</div>
+ <div id="whatsapp-drafts" class="inventory-list"></div>
+ <p class="inventory-footnote">Do not forward unnecessary personal information. Franks24 must publish an appropriate privacy notice and configure its official WhatsApp Business webhook before receiving messages.</p>
+</section>
 </div>
 <p class="staff-footnote">To use another approved staff account, select <strong>Switch Google account</strong> after sign-in. Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
 </section>
