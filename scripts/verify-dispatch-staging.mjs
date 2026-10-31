@@ -37,7 +37,7 @@ async function probe(fetcher,url,token){
   url+" must not cache private API responses.");
  return {status:response.status,body:await response.json()};
 }
-export async function checkStaging({origin,fetcher=fetch,approvedDispatcherToken,deniedDispatcherToken}){
+export async function checkStaging({origin,fetcher=fetch,approvedDispatcherToken,deniedDispatcherToken,approvedHost}){
  const base=validateStagingOrigin(origin);
  const response=await fetcher(base+"/",{
   method:"GET",cache:"no-store",redirect:"manual",signal:AbortSignal.timeout(15000)
@@ -54,6 +54,9 @@ export async function checkStaging({origin,fetcher=fetch,approvedDispatcherToken
  }
  let identity="not-run";
  if(approvedDispatcherToken||deniedDispatcherToken){
+  // Never send a real ID token to an arbitrary Firebase Hosting tenant.
+  assert.ok(approvedHost&&new URL(base).hostname===approvedHost,
+   "Exact approved staging hostname is required before any bearer token is sent.");
   assert.ok(approvedDispatcherToken&&deniedDispatcherToken,
    "Both approved and unauthorized test identities are required.");
   const approved=await probe(fetcher,base+"/api/dispatcher/session",approvedDispatcherToken);
@@ -73,7 +76,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
  const denied=process.env.DISPATCH_STAGING_UNAUTHORIZED_ID_TOKEN;
  if((approved||denied)&&process.env.DISPATCH_STAGING_REAL_IDENTITY_ACCEPTANCE!=="true")
   throw Error("Identity probes require explicit DISPATCH_STAGING_REAL_IDENTITY_ACCEPTANCE=true after security-owner approval.");
- checkStaging({origin,approvedDispatcherToken:approved,deniedDispatcherToken:denied}).then(
+ checkStaging({origin,approvedDispatcherToken:approved,deniedDispatcherToken:denied,
+  approvedHost:process.env.DISPATCH_STAGING_APPROVED_HOST}).then(
   report=>console.log(JSON.stringify({result:"pass",...report},null,2)),
   error=>{console.error("Staging acceptance FAILED: "+error.message);process.exitCode=1;}
  );
