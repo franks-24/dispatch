@@ -91,3 +91,14 @@ test("operations list searches and filters real loaded records with page-scoped 
  await expect(page.locator(".records-page [role=status]")).toContainText("Showing 1 of 2 loaded records on this page");
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+
+test("public dispatcher remains security-paused after client script initializes",async({page})=>{
+ await page.goto("/dispatcher/");
+ const login=page.locator("#staff-login");
+ await expect(login).toBeDisabled();
+ await expect(login).toHaveText("Access paused — security review");
+ await expect(page.locator("#staff-status")).toContainText("No sign-in or credential entry is permitted");
+ await expect(page.locator("#staff-workspace")).toBeHidden();
+ await expect(page.locator("#staff-logout")).toBeHidden();
+ await expect(page.locator("#staff-status")).not.toContainText("Choose your own approved Franks24 Google Workspace account");
+});

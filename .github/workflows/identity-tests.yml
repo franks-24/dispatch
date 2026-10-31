@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Reject deceptive public HTML and scripts
+        run: node --test tests/public-safety.test.mjs && node tools/audit-public-safety.mjs
       - run: npm install
       - run: node --check assets/app.js && node --check deliveries/app.js
       - run: npm run test:onboarding && npm run test:site && npm run test:identity:unit && npm run test:deliveries && npm run test:dispatcher && npm run test:release

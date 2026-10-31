@@ -6,6 +6,8 @@ import {dispatcherConfig} from "./config.js";
 const $=id=>document.getElementById(id);
 let auth,sdk,currentVersion=0;
 const login=$("staff-login");
+const pausedLabel="Access paused — security review";
+const closedLabel=()=>dispatcherConfig.enabled?"Continue with Google ↗":pausedLabel;
 const note=text=>{$("staff-status").textContent=text;};
 const close=()=>{
  setInventorySession(null);
@@ -13,7 +15,7 @@ const close=()=>{
  $("staff-workspace").hidden=true;
  $("staff-logout").hidden=true;
  $("staff-account").textContent="";
- login.textContent="Continue with Google ↗";
+ login.textContent=closedLabel();
 };
 
 async function authorize(user){
@@ -55,7 +57,9 @@ async function authorize(user){
 async function start(){
  close();
  if(!dispatcherConfig.enabled){
-  note("Dispatcher access is not live yet. The trusted staff-directory backend must be deployed and verified before Google sign-in can be enabled.");
+  login.disabled=true;
+  login.textContent=pausedLabel;
+  note("Dispatcher access is paused for security review. No sign-in or credential entry is permitted until security, Directory and Firebase release checks pass.");
   return;
  }
  if(!firebaseConfig?.apiKey||!firebaseConfig?.authDomain||firebaseConfig?.projectId!=="dispatch-1491f"||!firebaseConfig?.appId){
