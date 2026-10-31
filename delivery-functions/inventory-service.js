@@ -56,12 +56,15 @@ export function createInventoryService({authorizer,store,savePhoto,readPhoto,ena
    }
    if(method==="POST"&&route.pathname==="/api/dispatcher/items"&&route.searchParams.size===0){
     const data=validateInventoryItem(body);
+    const requestId=requestHeaders["idempotency-key"]||requestHeaders["Idempotency-Key"];
+    if(typeof requestId!=="string"||!/^[A-Za-z0-9_-]{16,100}$/.test(requestId))
+     err(400,"A unique request key is required to prevent duplicate inventory records.");
     const id=reference();
     if(!safeId(id))err(503,"Could not generate a tracking reference.");
     const at=clock().toISOString();
     const item={tracking:id,...data,status:"registered",photoAvailable:false,createdAt:at,updatedAt:at,createdBy:staff.uid};
-    await store.create(item,staff.uid);
-    return {status:201,headers,body:{item}};
+    const saved=await store.create(item,staff.uid,requestId,JSON.stringify(data));
+    return {status:201,headers,body:{item:saved}};
    }
    const photo=route.pathname.match(/^\/api\/dispatcher\/items\/(F24-[0-9]{8}-[A-F0-9]{14})\/photo$/);
    if(photo&&method==="POST"&&route.searchParams.size===0){
