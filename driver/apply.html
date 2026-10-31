@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Apply to drive | Franks24 Dispatch</title><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../workspaces/styles.css"><!-- f24-assets:start -->
+<meta name="theme-color" content="#182b22"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/site-shell.css"><script type="module" src="../assets/site-shell.js"></script>
+<!-- f24-assets:end -->
+</head>
+<body data-workspace="driver" class="f24-app"><a class="skip" href="#main">Skip to main content</a><!-- f24-header:start -->
+<div class="f24-status-bar"><span><i class="f24-status-dot" aria-hidden="true"></i>Franks24 Dispatch · Service preview</span><a href="../deliveries/policies.html">Launch &amp; policy status ↗</a></div>
+<header class="f24-header"><a class="brand f24-brand" href="../" aria-label="Franks24 home"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 7h27l-5 8H17v5h13l-5 8h-8v9H7z" fill="currentColor"/><path d="m26 30 8-13v13z" fill="currentColor"/></svg><span>Franks24<small>DISPATCH</small></span></a><button class="f24-menu" type="button" aria-expanded="false" aria-controls="f24-navigation" aria-label="Toggle navigation">Menu<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><nav class="f24-nav" id="f24-navigation" aria-label="Main navigation"><a href="../">Home</a><a href="../deliveries/">Delivery desk</a><a href="../driver/" aria-current="page">Drivers</a><a href="../dispatcher/">Dispatcher</a><a href="../operations/">Operations</a></nav></header>
+<!-- f24-header:end -->
+<main id="main" class="f24-driver-apply">
+<section class="hero"><p class="eyebrow">DRIVER APPLICATIONS</p><h1>Drive with Franks24.</h1>
+<p>One application. Human-reviewed eligibility. Operational access only after independent approval.</p>
+<p class="notice">This is a staging service. Driver applications and policy acceptance open only after the approved terms, Firebase identity and secure application API are deployed. <a href="../deliveries/policies.html">Review launch status and policy drafts</a>.</p>
+<div class="signin"><button type="button" id="applicant-login" disabled>Continue with Google</button><button type="button" id="applicant-logout" hidden>Sign out</button><span id="applicant-account"></span></div>
+<p id="applicant-status" role="status" aria-live="polite">Checking application service readiness.</p></section>
+<section id="application-panel" hidden aria-label="Driver application">
+<form id="apply-form" hidden>
+<h2>Submit your application for review</h2><p class="muted">Your verified Google email is used to link this request. Never upload identity, licence, bank or insurance documents here; an authorized reviewer will tell you how to provide evidence privately.</p>
+<div class="grid"><label>Legal name<input name="name" type="text" required minlength="2" maxlength="120" autocomplete="name" placeholder="Your legal name"></label>
+<label>Service area<input name="region" type="text" required minlength="2" maxlength="120" placeholder="e.g. Johannesburg"></label>
+<label>Vehicle type<select name="vehicle" required><option value="">Select vehicle</option><option value="bicycle">Bicycle</option><option value="motorbike">Motorbike</option><option value="car">Car</option><option value="bakkie">Bakkie</option><option value="van">Van</option></select></label></div>
+<fieldset><legend>Mandatory policy acknowledgments</legend>
+<p class="muted">Read the actual approved policy documents before accepting. Acceptance is versioned and stored with your verified identity.</p>
+<label><input type="checkbox" name="termsAccepted" required> I have read and accept the applicable <a href="../legal/delivery-terms.html" target="_blank" rel="noopener noreferrer">driver and delivery terms</a>.</label>
+<label><input type="checkbox" name="privacyAcknowledged" required> I acknowledge the <a href="../legal/delivery-privacy.html" target="_blank" rel="noopener noreferrer">privacy notice</a>.</label>
+<label><input type="checkbox" name="dataUseAcknowledged" required> I acknowledge the <a href="../legal/delivery-data.html" target="_blank" rel="noopener noreferrer">data ownership and permitted use notice</a>.</label>
+</fieldset><p class="muted">Submitting does not guarantee approval, work or earnings. You cannot accept a job until verified and approved.</p>
+<button id="apply-submit" type="submit">Submit for human review</button></form>
+<article id="application-summary" class="card" hidden><h2>Application status</h2><p id="application-state" class="pill"></p><p id="application-details"></p><p id="application-id" class="muted"></p><p>Driver access remains restricted until an authorized reviewer completes all mandatory checks. Contact support if your identity or credentials change.</p><a class="button" href="./">Go to driver workspace</a></article>
+</section>
+<section class="guidance"><h2>What happens next</h2><div class="grid"><div><h3>01 · Apply</h3><p>Use your own verified Google account and submit basic contact and vehicle information.</p></div>
+<div><h3>02 · Verify</h3><p>Reviewers separately verify identity, eligibility, licence/permit, vehicle, insurance, safety and payout evidence using restricted channels.</p></div>
+<div><h3>03 · Accept &amp; approve</h3><p>Reviewed policy acceptance, expiry dates and a human decision determine access. Incomplete or expired checks block approval.</p></div>
+<div><h3>04 · Drive safely</h3><p>Only approved drivers can see their own dispatch offers, trips and recorded earnings. No job use while driving.</p></div></div></section>
+</main><!-- f24-footer:start -->
+<footer class="f24-footer"><div class="f24-footer-top"><div><a class="f24-footer-brand" href="../">franks24<small>DISPATCH</small></a><p>Good things, on the move.</p></div><nav aria-label="Policies and support"><a href="../legal/delivery-terms.html">Terms &amp; conditions</a><a href="../legal/delivery-privacy.html">Privacy notice</a><a href="../legal/delivery-data.html">Data ownership &amp; use</a><a href="../deliveries/policies.html">Delivery policy drafts</a><a href="../deliveries/#account-panel">Privacy requests</a></nav></div><div class="f24-footer-bottom"><span>© 2026 Franks24 · Dispatch is a Franks24 service.</span><span>Policies are drafts pending operator and legal review.</span><a href="#main">Back to content ↑</a></div></footer>
+<!-- f24-footer:end --><script type="module" src="./apply.js"></script></body></html>
