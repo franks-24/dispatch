@@ -54,6 +54,7 @@ test("privacy and policy links lead to explicitly unapproved draft",async({page}
  await expect(page.locator("main")).toContainText("Driver GPS");
 });
 test("live custom domain responds, checking new copy only once published",async({page},info)=>{
+ test.skip(process.env.DISPATCH_GOOGLE_SECURITY_CLEARED!=="true","P0 Safe Browsing warning: never open flagged public site in a browser before owner clearance.");
  const response=await page.goto("https://dispatch.franks24.com/",{waitUntil:"domcontentloaded"});
  expect(response?.status()).toBe(200);
  await expect(page.locator("#hero-heading")).toBeVisible();
