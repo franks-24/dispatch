@@ -48,7 +48,9 @@
    <small>Phone camera requires HTTPS and browser permission. Manual entry always works.</small>
   </div>
   <div class="inventory-field"><label for="item-name">Item description *</label>
-   <input id="item-name" name="name" autocomplete="off" maxlength="120" required placeholder="e.g. Replacement pump"></div>
+   <input id="item-name" name="name" autocomplete="off" maxlength="120" required placeholder="Start typing a previous product or new description">
+   <div class="product-suggestions" id="product-suggestions" aria-label="Suggested matching products"></div>
+   <p class="inventory-helper" id="product-match-hint" role="status" aria-live="polite"></p></div>
   <div class="inventory-fields-two">
    <div class="inventory-field"><label for="item-sku">SKU / item number</label>
     <input id="item-sku" name="sku" maxlength="80" autocomplete="off" placeholder="e.g. PUMP-220"></div>
