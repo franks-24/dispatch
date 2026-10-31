@@ -10,6 +10,10 @@
 
 See the [current build and acceptance record](docs/build-acceptance-2026-10-31.md) for phase status, entry points, deployment commands and remaining integrations.
 
+## Shared website and application interface
+
+The website and all portals share a responsive header, footer, theme and courier policy links. Customer tasks use compact panels; driver guidance and secondary inventory tools expand when needed. See [interface validation and activation status](docs/shared-interface-2026-10-31.md).
+
 ## Current capabilities and production status
 
 | Area | Status |

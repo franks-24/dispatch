@@ -1,0 +1,6 @@
+export async function googleFixture(page){
+ await page.route("**/assets/config.js",route=>route.fulfill({contentType:"text/javascript",body:'export const firebaseConfig={apiKey:"fixture-only",projectId:"dispatch-1491f",appId:"fixture",authDomain:"test.invalid"};'}));
+ await page.route("https://www.gstatic.com/firebasejs/*/firebase-app.js",route=>route.fulfill({contentType:"text/javascript",body:'export const getApps=()=>[]; export const initializeApp=()=>({});'}));
+ await page.route("https://www.gstatic.com/firebasejs/*/firebase-auth.js",route=>route.fulfill({contentType:"text/javascript",body:`let callback; const auth={currentUser:null}; const user={uid:"fixture-user",email:"fixture@test.invalid",getIdToken:async()=>"fixture-token"}; export class GoogleAuthProvider{setCustomParameters(){}} export const getAuth=()=>auth,browserSessionPersistence={},setPersistence=async()=>{}; export function onAuthStateChanged(a,cb){callback=cb;queueMicrotask(()=>cb(null));} export async function signInWithPopup(){auth.currentUser=user;await callback(user);} export async function signOut(){auth.currentUser=null;await callback(null);}`}));
+}
+export function json(route,body,status=200){return route.fulfill({status,contentType:"application/json",body:JSON.stringify(body)});}

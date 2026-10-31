@@ -40,6 +40,7 @@ async function authorize(user){
   $("staff-workspace").hidden=false;
   setInventorySession(user);
   setWhatsAppSession(user);
+  document.dispatchEvent(new CustomEvent("franks24:workspace-ready"));
   $("staff-logout").hidden=false;
   $("staff-account").textContent=user.email||"Verified staff account";
   login.textContent="Switch Google account";

@@ -37,6 +37,7 @@ function render(){
    if(s.barcode)$("item-barcode").value=s.barcode;
    if(s.quantity)$("item-quantity").value=s.quantity;
    if(s.orderReference)$("item-notes").value="Order: "+s.orderReference;
+   document.dispatchEvent(new CustomEvent("franks24:show-panel",{detail:{id:"inventory-panel"}}));
    $("item-name").focus();
    info("Draft product fields copied for review. Address, time and driver details stay in the WhatsApp draft and are not dispatched.");
   });

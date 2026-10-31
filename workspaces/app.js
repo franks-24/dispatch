@@ -2,12 +2,12 @@ import {firebaseConfig} from "../assets/config.js";
 import {operationsConfig} from "./config.js";
 const $=id=>document.getElementById(id),mode=document.body.dataset.workspace;
 const prefix=mode==="driver"?"/api/driver":"/api/operations";
-let auth,sdk,user=null,epoch=0,controller=new AbortController(),session=null,selected=mode==="driver"?"jobs":"quotes",watch=null,sharingJob=null,lastPosition=0;
+let auth,sdk,user=null,epoch=0,viewVersion=0,controller=new AbortController(),session=null,selected=mode==="driver"?"jobs":"quotes",watch=null,sharingJob=null,lastPosition=0;
 const keys=new Map(),money=value=>new Intl.NumberFormat("en-ZA",{style:"currency",currency:"ZAR"}).format(value/100);
 const note=text=>{$("status").textContent=text;};
 const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;};
 function stopGPS(){if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;sharingJob=null;}
-function lock(){epoch++;controller.abort();controller=new AbortController();stopGPS();session=null;selected=mode==="driver"?"jobs":"quotes";keys.clear();$("workspace").hidden=true;$("content").replaceChildren();$("tabs").replaceChildren();$("account").textContent="";}
+function lock(){epoch++;viewVersion++;controller.abort();controller=new AbortController();stopGPS();session=null;selected=mode==="driver"?"jobs":"quotes";keys.clear();$("workspace").hidden=true;$("content").replaceChildren();$("tabs").replaceChildren();$("account").textContent="";}
 async function request(path,body){
  if(!user)throw Error("Sign in to continue.");
  const identity=user,version=epoch,url=new URL(path,location.origin);
@@ -45,12 +45,16 @@ function form(title,parent,setup,submitLabel,work){
 }
 const values=(f,names)=>Object.fromEntries(names.map(name=>[name,f.get(name)]));
 async function list(name,render,cursor=""){
- const version=epoch,page=await request(prefix+"/"+name+"?limit=30"+(cursor?"&cursor="+encodeURIComponent(cursor):""));
- if(version!==epoch)return;
- const root=$("content");root.replaceChildren();await render(root,page.items);
- if(version!==epoch)return;
+ const version=epoch,view=++viewVersion;
+ $("content").replaceChildren(el("p","Loading this workspace view.","muted"));
+ const page=await request(prefix+"/"+name+"?limit=30"+(cursor?"&cursor="+encodeURIComponent(cursor):""));
+ if(version!==epoch||view!==viewVersion)return;
+ if(!Array.isArray(page.items))throw Error("The workspace returned an invalid record list. Refresh to try again.");
+ const root=el("div");await render(root,page.items);
+ if(version!==epoch||view!==viewVersion)return;
  root.prepend(el("p",page.items.length+" records on this page. Use the next page control for older records.","muted"));
  if(page.nextCursor)button("Next page",()=>list(name,render,page.nextCursor),root);
+ $("content").replaceChildren(root);
 }
 function card(root,title,status){const node=el("article",undefined,"card");node.append(el("h3",title),el("span",status,"pill"));root.append(node);return node;}
 async function load(){
@@ -150,7 +154,7 @@ async function load(){
  });
 }
 async function openTrip(id){
- const version=epoch;stopGPS();const data=await request(prefix+"/jobs/"+id);if(version!==epoch)return;
+ const version=epoch,view=++viewVersion;stopGPS();const data=await request(prefix+"/jobs/"+id);if(version!==epoch||view!==viewVersion)return;
  const root=$("content");root.replaceChildren();button("Back to jobs",()=>load(),root);
  const job=data.job,c=card(root,job.pickupArea+" → "+job.deliveryArea,job.status);
  c.append(el("p","Agreed delivery deadline: "+(Number.isFinite(Date.parse(job.dueAt))?new Date(job.dueAt).toLocaleString("en-ZA"):"Contact dispatch")));
@@ -165,7 +169,7 @@ async function openTrip(id){
    const bytes=new Uint8Array(await chosen.arrayBuffer());let text="";for(let i=0;i<bytes.length;i+=8192)text+=String.fromCharCode(...bytes.subarray(i,i+8192));
    await request(prefix+"/jobs/"+id+"/proof",{base64:btoa(text)});await openTrip(id);
   });
-  const location=el("section",undefined,"card");location.append(el("h3","Optional active-trip location"),el("p","Sharing sends your precise location to authorized dispatch staff while this trip stays open. Stop sharing or sign out to stop collection. Your device may show a permission request."));
+  const location=el("details",undefined,"card");location.append(el("summary","Optional active-trip location"),el("p","Sharing sends your precise location to authorized dispatch staff while this trip stays open. Stop sharing or sign out to stop collection. Your device may show a permission request."));
   button("Start optional trip location",async()=>{
    if(!navigator.geolocation)throw Error("Location is unavailable on this device.");
    stopGPS();sharingJob=id;
@@ -179,7 +183,7 @@ async function openTrip(id){
   button("Stop trip location and clear last position",async()=>{stopGPS();await request(prefix+"/jobs/"+id+"/location",{consent:false,policyVersion:operationsConfig.policyVersion});note("Trip location sharing stopped.");},location);root.append(location);
  }
  const inbox=el("section",undefined,"card");inbox.append(el("h3","Shipment messages"),el("p","Send messages only when safely parked. Message storage does not prove that the recipient has read it."));
- const messages=await request(prefix+"/jobs/"+id+"/messages");if(version!==epoch)return;
+ const messages=await request(prefix+"/jobs/"+id+"/messages");if(version!==epoch||view!==viewVersion)return;
  const history=el("div");
  const rows=page=>[...page.items].reverse().map(msg=>el("p",msg.role+" · "+msg.createdAt+"\n"+msg.text,"message"));
  history.append(...rows(messages));inbox.append(history);
@@ -193,16 +197,25 @@ async function openTrip(id){
  }
  form("Send a shipment message",inbox,f=>field(f,"Message","text",{type:"textarea"}),"Send message",async(_,f)=>{await request(prefix+"/jobs/"+id+"/messages",{text:f.get("text")});await openTrip(id);});root.append(inbox);
 }
-function tabs(){
- const names=mode==="driver"?[["jobs","Offers & trips"],["ledger","Earnings & settlements"]]:[["quotes","Quote requests"],["shipments","Bookings"],["jobs","Dispatch queue"],["drivers","Drivers"],...(session.canReview?[["applications","Vetting review"],["privacy","Privacy requests"]]:[]),...(session.canReconcile?[["settlements","Reconciliation"]]:[])];
- $("tabs").replaceChildren();
- for(const [value,label]of names){const b=button(label,async()=>{selected=value;tabs();await load();},$("tabs"));b.setAttribute("aria-pressed",String(selected===value));}
+function workspaceViews(){
+ return mode==="driver"?[["jobs","Offers & trips"],["ledger","Earnings & settlements"]]:[["quotes","Quote requests"],["shipments","Bookings"],["jobs","Dispatch queue"],["drivers","Drivers"],...(session?.canReview?[["applications","Vetting review"],["privacy","Privacy requests"]]:[]),...(session?.canReconcile?[["settlements","Reconciliation"]]:[])];
 }
+function tabs(){
+ const names=workspaceViews();
+ $("tabs").replaceChildren();
+ for(const [value,label]of names){const b=button(label,async()=>{selected=value;history.replaceState(null,"","#"+value);tabs();await load();},$("tabs"));b.setAttribute("aria-pressed",String(selected===value));}
+}
+window.addEventListener("hashchange",()=>{
+ if(!session)return;
+ const requested=location.hash.slice(1);
+ if(workspaceViews().some(([id])=>id===requested)&&selected!==requested){selected=requested;tabs();load().catch(error=>note(error.message));}
+});
 async function authorize(identity){
  lock();user=identity;$("logout").hidden=!identity;if(!identity){note("Choose your own approved Google account.");return;}
  const version=epoch;
  try{session=await request(prefix+"/session");if(version!==epoch)return;
   if(session.role!==(mode==="driver"?"driver":"dispatcher"))throw Error("Workspace access not verified.");
+  const requested=location.hash.slice(1);if(workspaceViews().some(([id])=>id===requested))selected=requested;
   $("account").textContent=identity.email||"Verified account";$("workspace").hidden=false;tabs();await load();if(version===epoch)note("Current workspace access verified.");
  }catch(error){if(version===epoch){lock();note(error.message);}}
 }
