@@ -1,7 +1,9 @@
-import {JWT} from "google-auth-library";
-
-// Google Workspace Directory operations run only on the backend.
+// Server-only Workspace Directory connector. Do not export Workspace tokens to clients.
+// Uses IAM Credentials signJwt: no user-managed service-account private keys.
 const BASE="https://admin.googleapis.com/admin/directory/v1";
+const OAUTH_TOKEN_URL="https://oauth2.googleapis.com/token";
+const SIGN_JWT_URL="https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/franks24-directory%40dispatch-1491f.iam.gserviceaccount.com:signJwt";
+const DIRECTORY_SERVICE_ACCOUNT="franks24-directory@dispatch-1491f.iam.gserviceaccount.com";
 const SCOPES=[
  "https://www.googleapis.com/auth/admin.directory.user.readonly",
  "https://www.googleapis.com/auth/admin.directory.group.member.readonly"
@@ -30,14 +32,55 @@ export function createDirectoryReader({getToken,fetcher=fetch}){
   }
  };
 }
-export function createWorkspaceDirectory({credentialsJson,delegatedAdminEmail,fetcher=fetch}){
+
+// ADC belongs to the Functions runtime identity. Only that identity should have
+// iam.serviceAccounts.signJwt on the dedicated, Workspace-delegated account.
+let adcClientPromise;
+async function signJwtWithIam(payload){
+ if(!adcClientPromise){
+  adcClientPromise=import("google-auth-library")
+   .then(async({GoogleAuth})=>new GoogleAuth({
+    scopes:["https://www.googleapis.com/auth/cloud-platform"]
+   }).getClient())
+   .catch(error=>{adcClientPromise=undefined;throw error;});
+ }
+ const client=await adcClientPromise;
+ const response=await client.request({
+  method:"POST",url:SIGN_JWT_URL,data:{payload},timeout:10000
+ });
+ return required(response?.data?.signedJwt,"Signed Directory assertion");
+}
+
+export function createWorkspaceDirectory({
+ delegatedAdminEmail,fetcher=fetch,clock=Date.now,signJwt=signJwtWithIam
+}){
  const subject=required(delegatedAdminEmail,"Delegated Workspace administrator");
- let credentials;
- try{credentials=JSON.parse(required(credentialsJson,"Directory service account secret"));}
- catch{throw Error("Invalid Directory secret.");}
- if(credentials?.type!=="service_account"||!credentials.client_email||
-  typeof credentials.private_key!=="string"||!credentials.private_key.includes("BEGIN PRIVATE KEY"))
-  throw Error("Invalid Directory identity.");
- const jwt=new JWT({email:credentials.client_email,key:credentials.private_key,subject,scopes:SCOPES});
- return createDirectoryReader({getToken:async()=>await jwt.getAccessToken().then(r=>r.token),fetcher});
+ if(typeof signJwt!=="function"||typeof clock!=="function")throw Error("Directory signer unavailable.");
+ let cached, pending;
+ const issue=async()=>{
+  const iat=Math.floor(clock()/1000);
+  const payload=JSON.stringify({
+   iss:DIRECTORY_SERVICE_ACCOUNT,sub:subject,scope:SCOPES.join(" "),
+   aud:OAUTH_TOKEN_URL,iat,exp:iat+3600
+  });
+  const assertion=required(await signJwt(payload),"Signed Directory assertion");
+  const response=await fetcher(OAUTH_TOKEN_URL,{
+   method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded",Accept:"application/json"},
+   body:new URLSearchParams({"grant_type":"urn:ietf:params:oauth:grant-type:jwt-bearer",assertion}),
+   cache:"no-store",redirect:"error",signal:AbortSignal.timeout(10000)
+  });
+  if(!response.ok)throw Error("Directory access token unavailable.");
+  const result=await response.json();
+  if(typeof result?.access_token!=="string"||!result.access_token||
+     !Number.isFinite(result.expires_in)||result.expires_in<=120)
+   throw Error("Directory access token unavailable.");
+  cached={token:result.access_token,expiresAt:clock()+result.expires_in*1000};
+  return cached.token;
+ };
+ const getToken=async()=>{
+  if(cached?.expiresAt>clock()+60000)return cached.token;
+  if(!pending)pending=issue().finally(()=>{pending=undefined;});
+  return pending;
+ };
+ return createDirectoryReader({getToken,fetcher});
 }
