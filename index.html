@@ -3,158 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#08121e">
-  <meta name="description" content="Dispatch by Franks24 connects people to opportunities and helps teams coordinate work. Secure Google sign-in, onboarding and job management in one place.">
-  <meta property="og:title" content="Dispatch — Work moves here">
-  <meta property="og:description" content="A simpler way to find work, hire people and manage every opportunity.">
+  <meta name="theme-color" content="#0b1722">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Franks24 Dispatch is a courier and logistics service bringing delivery quotes, bookings and shipment tracking together. Preview only — live requests are not yet available.">
   <meta property="og:type" content="website">
-  <title>Dispatch | Work moves here</title>
+  <meta property="og:title" content="Franks24 — Dispatch and Delivery Tracking">
+  <meta property="og:description" content="Move parcels, not paperwork. Explore Franks24 Dispatch delivery quotes, bookings and tracking. Preview only.">
+  <title>Franks24 | Dispatch and Delivery Tracking</title>
+  <link rel="canonical" href="https://dispatch.franks24.com/">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
-  <link rel="stylesheet" href="./assets/onboarding.css">
-  <link rel="stylesheet" href="./assets/identity.css">
-  <script type="module" src="./assets/app.js"></script>
+  <link rel="stylesheet" href="./assets/dispatch-landing.css">
 </head>
 <body>
+  <a href="#main" class="dispatch-skip">Skip to main content</a>
   <div class="site-shell">
-    <header class="site-header" id="top">
-      <a class="brand" href="./" aria-label="Dispatch home">
+    <header id="top" class="site-header">
+      <a class="brand" href="./" aria-label="Franks24 home — Dispatch courier service">
         <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 44 44" width="44" height="44"><rect width="44" height="44" rx="13" fill="#b8f477"/><path d="M15 11h9.5c7 0 11 4.5 11 11s-4 11-11 11H15V11Zm8 7v8h2c2.4 0 3.9-1.6 3.9-4s-1.5-4-3.9-4H23Z" fill="#0b1722"/></svg></span>
-        <span class="brand-word">dispatch<span class="brand-period">.</span><small>BY FRANKS24</small></span>
+        <span class="brand-word">Franks24<small>DISPATCH · COURIER &amp; LOGISTICS</small></span>
       </a>
       <nav class="topnav" aria-label="Main navigation">
-        <a class="nav-public" href="#how-it-works">How it works</a>
-        <a class="nav-public" href="#for-teams">For teams</a>
-        <button class="nav-login button button-outline" type="button" data-login>Sign in <span aria-hidden="true">↗</span></button>
-        <button class="nav-logout button button-outline" id="nav-signout" type="button" hidden>Sign out</button>
+        <a href="#how-it-works">How it works</a>
+        <a href="#for-teams">For business</a>
+        <a class="button button-outline dispatch-nav-cta" href="./deliveries/#workspace">Google account preview <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
 
-    <main>
-      <p id="identity-notice" class="identity-notice" role="status" aria-live="polite"></p>
-      <section id="view-landing" class="view">
-        <div class="landing-glow" aria-hidden="true"></div>
-        <section class="hero page-grid" aria-labelledby="hero-heading">
-          <div class="hero-copy">
-            <div class="eyebrow"><span class="eyebrow-dot"></span> THE SMARTER WAY TO CONNECT WORK & PEOPLE</div>
-            <h1 id="hero-heading">Work moves <span class="hero-outline">here<span class="accent-star">✳</span></span></h1>
-            <p class="hero-lead">Opportunity for people. Clarity for teams. One simple place to find work, onboard, hire and keep everything moving.</p>
-            <div class="hero-actions">
-              <button type="button" class="button button-primary button-large" data-login><span class="google-g" aria-hidden="true"><svg viewBox="0 0 48 48" width="22" height="22"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.25 5.48-4.76 7.18l7.73 6C44.42 38.03 46.98 31.88 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.41 14.41 0 0 1 9.75 24c0-1.6.27-3.15.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.92 7.51 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.92-2.13 15.89-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span> Continue with Google <span aria-hidden="true">↗</span></button>
-              <a class="hero-secondary" href="#how-it-works">Explore how it works <span aria-hidden="true">↘</span></a>
-            </div>
-            <p class="trustline"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2 4 6v6c0 5 3 8 8 10 5-2 8-5 8-10V6l-8-4Z"/><path d="m8 12 2.5 2.5L16 9"/></svg> Secure Google sign-in. No extra passwords. No unnecessary steps.</p>
+    <main id="main">
+      <section class="hero page-grid dispatch-hero" aria-labelledby="hero-heading">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-dot"></span> FRANKS24 / DISPATCH / AVAILABLE IN PREVIEW</div>
+          <h1 id="hero-heading">Every delivery.<br><span class="hero-outline">In motion<span class="accent-star">✳</span></span></h1>
+          <p class="hero-lead">A simpler way to request a courier quote, arrange a collection and follow your parcel from pickup to handover.</p>
+          <div class="hero-actions dispatch-actions">
+            <a class="button button-primary button-large" href="./deliveries/#quote">Get a quote <span aria-hidden="true">↗</span></a>
+            <a class="button button-outline button-large" href="./deliveries/#booking">Book a delivery</a>
+            <a class="dispatch-text-link" href="./deliveries/#tracking">Track a delivery <span aria-hidden="true">→</span></a>
           </div>
-          <div class="hero-visual" aria-label="Dispatch workspace preview">
-            <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
-            <div class="visual-top-label"><span class="pulse"></span> BUILT FOR WHAT'S NEXT</div>
-            <div class="preview-window">
-              <div class="window-top"><div class="window-dots"><i></i><i></i><i></i></div><span>YOUR WORKSPACE</span><span class="window-signal">◈</span></div>
-              <div class="window-body">
-                <div class="preview-heading"><div><div class="mini-overline">WELCOME TO DISPATCH</div><strong>Make your next move.</strong></div><div class="preview-avatar">↗</div></div>
-                <div class="preview-bento">
-                  <div class="preview-tile tile-lime"><span>01 / DISCOVER</span><strong>Find your<br>next opportunity.</strong><span class="tile-arrow">↗</span></div>
-                  <div class="preview-tile tile-dark"><span>02 / CONNECT</span><div class="people-stack"><b>A</b><b>M</b><b>+</b></div><strong>Better together.</strong></div>
-                  <div class="preview-tile tile-wide"><span>03 / GET MOVING</span><div class="progress-graphic"><i></i><i></i><i></i><i></i><i></i></div><strong>Everything in motion.</strong><span class="tile-arrow">↗</span></div>
-                </div>
+          <p class="dispatch-availability" role="status"><strong>Preview only.</strong> Live quote requests, bookings and payments are not yet active. Google sign-in and the delivery workflow require production acceptance testing.</p>
+        </div>
+        <div class="hero-visual" aria-label="Illustration of the three delivery stages">
+          <div class="visual-orbit orbit-one" aria-hidden="true"></div><div class="visual-orbit orbit-two" aria-hidden="true"></div>
+          <div class="visual-top-label"><span class="pulse"></span> BUILT FOR WHAT'S NEXT</div>
+          <div class="preview-window">
+            <div class="window-top"><div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div><span>DISPATCH OVERVIEW</span><span class="window-signal">◈</span></div>
+            <div class="window-body">
+              <div class="preview-heading"><div><div class="mini-overline">FRANKS24 COURIER SERVICE</div><strong>Keep everything moving.</strong></div><div class="preview-avatar" aria-hidden="true">↗</div></div>
+              <div class="preview-bento">
+                <div class="preview-tile tile-lime"><span>01 / QUOTE</span><strong>Plan your<br>delivery.</strong><span class="tile-arrow">↗</span></div>
+                <div class="preview-tile tile-dark"><span>02 / BOOK</span><div class="people-stack" aria-hidden="true"><b>F</b><b>24</b><b>↗</b></div><strong>Arrange pickup.</strong></div>
+                <div class="preview-tile tile-wide"><span>03 / TRACK</span><div class="progress-graphic" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><strong>Follow every handover.</strong><span class="tile-arrow">↗</span></div>
               </div>
             </div>
-            <div class="floating-tag"><span class="floating-icon">✳</span><span>ONE ACCOUNT<br><strong>MORE POSSIBILITY</strong></span></div>
           </div>
-        </section>
-
-        <div class="mini-features"><div><span class="feature-index">01</span><span>Google-powered identity</span></div><div><span class="feature-index">02</span><span>Simple profile onboarding</span></div><div><span class="feature-index">03</span><span>Work, all in one place</span></div></div>
-
-        <section id="how-it-works" class="info-section" aria-labelledby="how-heading">
-          <div class="section-topline"><span class="eyebrow dark-eyebrow">THE PROCESS</span><span class="section-index">/ 001</span></div>
-          <div class="section-heading-row"><h2 id="how-heading">Three steps.<br><em>You're in.</em></h2><p>No complicated signup flows. Just a clear path from your first visit to your next opportunity.</p></div>
-          <div class="step-grid">
-            <article class="step-card"><span class="step-count">01 /</span><span class="step-icon">↗</span><h3>Sign in with Google</h3><p>Use the Google account you already know. New and returning users share one secure entry point.</p></article>
-            <article class="step-card"><span class="step-count">02 /</span><span class="step-icon">◎</span><h3>Make it yours</h3><p>Choose whether you want to find work or hire. Tell us only what we need to set up your workspace.</p></article>
-            <article class="step-card"><span class="step-count">03 /</span><span class="step-icon">✳</span><h3>Get to work</h3><p>Explore opportunities, express interest and keep track of work from a single dashboard.</p></article>
-          </div>
-        </section>
-
-        <section id="for-teams" class="team-section"><div class="team-orb" aria-hidden="true"></div><div class="team-kicker">FOR THE PEOPLE WHO MAKE THINGS HAPPEN</div><h2>Better connections.<br><span>Better work.</span></h2><div class="team-bottom"><p>Whether you're looking for your next role or bringing a team together, Dispatch gives you a focused place to start.</p><button type="button" class="button button-light" data-login>Get started with Google ↗</button></div></section>
-      </section>
-
-      <section id="view-loading" class="view private-view" hidden aria-labelledby="identity-loading-title"><div class="private-card identity-card" role="status" aria-live="polite"><span class="identity-spinner" aria-hidden="true"></span><h1 id="identity-loading-title">Recognising your account</h1><p>Checking your profile and agreements before opening your workspace.</p></div></section>
-      <section id="view-auth-error" class="view private-view" hidden aria-labelledby="identity-error-title"><div class="private-card identity-card"><h1 id="identity-error-title">Your workspace could not open</h1><p id="auth-error-detail"></p><div class="form-actions"><button id="retry-identity" type="button" class="button button-primary">Retry securely</button><button id="error-signout" type="button" class="button button-outline-dark">Sign out</button></div></div></section>
-      <section id="view-onboarding" class="view private-view onboarding-experience" hidden aria-labelledby="onboarding-heading">
-        <div class="onboard-ambient" aria-hidden="true"></div>
-        <div class="private-top onboard-top"><span class="eyebrow"><span class="eyebrow-dot"></span> WELCOME TO DISPATCH / ACCOUNT ACTIVATION</span><span id="onboard-email" class="signed-in-pill"></span></div>
-        <div class="onboard-layout">
-          <aside class="onboard-story" aria-label="Your next steps">
-            <div class="onboard-story-kicker"><span class="onboard-live-dot"></span> YOUR NEXT MOVE STARTS HERE</div>
-            <h2>Big things start with <em>one step.</em></h2>
-            <p>Make your profile, choose your direction and own your next opportunity. All with one secure Google account.</p>
-            <div class="onboard-journey" aria-label="Account activation steps">
-              <div class="journey-step complete"><span class="journey-icon">✓</span><div><strong>Identity verified</strong><small>Google sign-in completed</small></div></div>
-              <div class="journey-step current"><span class="journey-icon">02</span><div><strong id="onboard-stage">Create your workspace</strong><small>Profile and agreements</small></div></div>
-              <div class="journey-step"><span class="journey-icon">03</span><div><strong>Get moving</strong><small>Explore your workspace</small></div></div>
-            </div>
-            <div class="onboard-trust"><span aria-hidden="true">✳</span><div><strong>Your information. Your choices.</strong><small>Clear terms, transparent processing, and no hidden marketing opt-in.</small></div></div>
-          </aside>
-          <div class="private-card onboard-card">
-            <div class="onboard-card-head"><span class="step-number">GET STARTED / 02</span><span class="onboard-step-pill">SECURE ONBOARDING</span></div>
-            <h1 id="onboarding-heading">Make Dispatch <em>yours.</em></h1>
-            <p id="onboarding-description" class="onboard-intro">A few details, clear agreements, and your workspace is ready.</p>
-            <form id="onboarding-form" novalidate>
-              <div id="profile-fields">
-                <label class="form-heading" id="role-heading">What brings you here?</label>
-                <div class="role-options" role="group" aria-labelledby="role-heading">
-                  <button class="role-card selected" type="button" data-role="worker" aria-pressed="true"><span class="role-glyph">↗</span><strong>I'm looking for work</strong><span>Discover and apply for opportunities</span></button>
-                  <button class="role-card" type="button" data-role="employer" aria-pressed="false"><span class="role-glyph">⊞</span><strong>I'm hiring</strong><span>Apply for verification before posting jobs</span></button>
-                </div>
-                <div class="form-grid">
-                  <label>Full name <input id="profile-name" autocomplete="name" maxlength="100" required placeholder="Your full name"></label>
-                  <label>City or area <input id="profile-location" autocomplete="address-level2" maxlength="120" required placeholder="e.g. Johannesburg"></label>
-                  <label>Phone (optional) <input id="profile-phone" autocomplete="tel" type="tel" maxlength="30" placeholder="+27"></label>
-                  <label id="skills-label">Skills (optional) <input id="profile-skills" maxlength="250" placeholder="e.g. Events, logistics, admin"></label>
-                </div>
-                <p class="form-note">Your name, selected role and city help set up your workspace. Employers must be independently verified before posting jobs.</p>
-              </div>
-              <section class="agreement-section" aria-labelledby="agreement-heading">
-                <div class="agreement-heading-row"><div><span class="step-number">YOUR RIGHTS MATTER</span><h2 id="agreement-heading">Before we begin, let's be clear.</h2></div><span class="agreement-counter">03 REQUIRED</span></div>
-                <p class="agreement-lead">Review each document. All three acknowledgments are required to use Dispatch; none grants us ownership of your content or permission to send marketing.</p>
-                <div class="agreement-list">
-                  <label class="agreement-option"><input type="checkbox" id="consent-terms" required><span><strong>I accept the Platform Terms of Use.</strong><small>Rules for accounts, listings, acceptable use and account suspension. <a href="./legal/terms.html" target="_blank" rel="noopener noreferrer">Read Terms of Use ↗</a></small></span></label>
-                  <label class="agreement-option"><input type="checkbox" id="consent-privacy" required><span><strong>I acknowledge the Privacy Notice.</strong><small>How personal information is collected, shared, kept and protected. <a href="./legal/privacy.html" target="_blank" rel="noopener noreferrer">Read Privacy Notice ↗</a></small></span></label>
-                  <label class="agreement-option"><input type="checkbox" id="consent-ownership" required><span><strong>I acknowledge the Data Ownership &amp; Usage Policy.</strong><small>You retain ownership of your content; limited permissions support the service. <a href="./legal/data-ownership.html" target="_blank" rel="noopener noreferrer">Read Data Policy ↗</a></small></span></label>
-                </div>
-                <p id="consent-error" class="consent-error" role="alert" hidden>Please review and check all three required acknowledgments before continuing.</p>
-                <p class="agreement-footnote">Dispatch records the policy version and the time you accept against your verified Google identity. If these documents change materially, you may be asked to review them again.</p>
-              </section>
-              <button type="submit" class="button button-primary button-large form-submit onboard-cta" id="onboard-submit">Agree &amp; create my workspace <span aria-hidden="true">↗</span></button>
-              <p class="onboard-bottom-note">Protected by Google authentication and Firebase security rules. <button type="button" id="onboarding-signout" class="text-button">Not ready? Sign out</button></p>
-            </form>
-          </div>
+          <div class="floating-tag"><span class="floating-icon">✳</span><span>ONE ACCOUNT<br><strong>MORE WAYS TO MOVE</strong></span></div>
         </div>
       </section>
 
-      <section id="view-dashboard" class="view private-view" hidden aria-labelledby="dashboard-heading">
-        <div class="dashboard-top"><div><span class="eyebrow">YOUR WORKSPACE</span><h1 id="dashboard-heading">Welcome back<span class="brand-period">.</span></h1><p id="dashboard-intro">Everything you need to keep work moving.</p></div><div class="user-chip"><span id="user-initial">D</span><div><strong id="user-name">Member</strong><small id="user-role">Dispatch member</small></div></div></div>
-        <div class="dashboard-layout">
-          <aside class="sidebar"><div class="sidebar-label">NAVIGATION</div><button type="button" class="side-link active" data-panel="jobs">↗ <span id="jobs-nav-label">Opportunities</span></button><button type="button" class="side-link" data-panel="profile">◎ <span>My profile</span></button><div class="sidebar-foot">POWERED BY FRANKS24<br>SECURE GOOGLE IDENTITY</div></aside>
-          <div class="dashboard-main">
-            <section id="panel-jobs" class="dashboard-panel"><div class="panel-head"><div><span class="eyebrow dark-eyebrow">WORKSPACE / JOBS</span><h2 id="jobs-heading">Opportunities</h2><p id="jobs-description">New work will appear here when it's available.</p></div><button type="button" class="button button-dark" id="new-job-button" hidden>+ Post a job</button></div><div id="employer-approval-banner" class="verification-banner" role="status" aria-live="polite" hidden>
-                <div><strong id="employer-approval-heading">Verification required</strong><p id="employer-approval-description">An administrator must verify your employer account before you can publish opportunities.</p></div>
-                <button type="button" class="button button-outline-dark" id="refresh-employer-approval">Check status</button>
-              </div>
-              <div id="jobs-list" class="jobs-list"><div class="empty-state"><div class="empty-mark">↗</div><h3>Loading your workspace</h3><p>Please wait a moment.</p></div></div>
-              <form id="job-form" class="job-form" hidden><h3>Post an opportunity</h3><div class="form-grid"><label>Job title <input id="job-title" maxlength="120" required placeholder="e.g. Event coordinator"></label><label>Location <input id="job-location" maxlength="120" required placeholder="e.g. Pretoria"></label><label>Work type <select id="job-type"><option value="Contract">Contract</option><option value="Part-time">Part-time</option><option value="Full-time">Full-time</option><option value="Once-off">Once-off</option></select></label><label>Compensation (optional) <input id="job-compensation" maxlength="100" placeholder="e.g. R350 / day"></label></div><label>Job details <textarea id="job-description" rows="5" maxlength="3000" required placeholder="Describe the work, timing and requirements"></textarea></label><div class="form-actions"><button type="button" class="button button-outline-dark" id="cancel-job">Cancel</button><button type="submit" class="button button-dark" id="save-job">Publish opportunity ↗</button></div></form>
-            </section>
-            <section id="panel-profile" class="dashboard-panel" hidden><div class="panel-head"><div><span class="eyebrow dark-eyebrow">WORKSPACE / ACCOUNT</span><h2>My profile</h2><p>Your Dispatch identity, backed by your Google account.</p></div></div><div id="profile-details" class="profile-details"></div></section>
-          </div>
+      <div class="mini-features" aria-label="Platform capabilities"><div><span class="feature-index">01</span><span>Google-powered identity</span></div><div><span class="feature-index">02</span><span>Customer delivery desk</span></div><div><span class="feature-index">03</span><span>Shipment history and tracking</span></div></div>
+
+      <section id="how-it-works" class="info-section" aria-labelledby="how-heading">
+        <div class="section-topline"><span class="eyebrow dark-eyebrow">THE PROCESS</span><span class="section-index">/ 001</span></div>
+        <div class="section-heading-row"><h2 id="how-heading">Three steps.<br><em>Keep moving.</em></h2><p>From a first quote request to tracking a confirmed delivery, the Franks24 Dispatch preview shows what your customer workspace will provide.</p></div>
+        <div class="step-grid">
+          <article class="step-card"><span class="step-count">01 /</span><span class="step-icon" aria-hidden="true">↗</span><h3>Sign in with Google</h3><p>One account entry point. Google sign-in is available for preview, but account onboarding and production activation are still being validated.</p></article>
+          <article class="step-card"><span class="step-count">02 /</span><span class="step-icon" aria-hidden="true">◎</span><h3>Request and book</h3><p>Enter collection and delivery details, request an issued quote and arrange pickup when the service opens. No payment is accepted in preview.</p></article>
+          <article class="step-card"><span class="step-count">03 /</span><span class="step-icon" aria-hidden="true">✳</span><h3>Follow the delivery</h3><p>View shipment events and private proof of delivery after the operational backend is approved and activated.</p></article>
         </div>
       </section>
-      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+      <section id="for-teams" class="team-section" aria-labelledby="teams-heading"><div class="team-orb" aria-hidden="true"></div><div class="team-kicker">FOR CUSTOMERS, COURIERS &amp; BUSINESS TEAMS</div><h2 id="teams-heading">Better logistics.<br><span>Clearer deliveries.</span></h2><div class="team-bottom"><p>Franks24 is the platform. Dispatch is its courier and logistics service. Customer delivery tools are in preview; driver verification and dispatcher workspaces remain under development.</p><a class="button button-light" href="./deliveries/">Explore delivery preview ↗</a></div></section>
+
+      <section class="dispatch-legal-note" aria-label="Launch and privacy status"><strong>Responsible launch.</strong> Delivery terms and privacy policies are drafts pending review of the operator identity, POPIA controls, data retention and driver location practices. <a href="./deliveries/policies.html">Read the policy drafts ↗</a></section>
     </main>
-
-    <footer class="footer"><span>© <span id="year">2026</span> FRANKS24 / DISPATCH</span><span>MOVE FORWARD, TOGETHER.</span><span class="footer-policies"><a href="./legal/terms.html">Terms</a><a href="./legal/privacy.html">Privacy</a><a href="./legal/data-ownership.html">Data rights</a></span><a href="#top">BACK TO TOP ↑</a></footer>
+    <footer class="footer"><span>© 2026 FRANKS24 / DISPATCH</span><span>SECURE VOICE. CLEAR DELIVERY. FRANKS24.</span><span class="footer-policies"><a href="./deliveries/policies.html">Delivery policies (draft)</a></span><a href="#top">BACK TO TOP ↑</a></footer>
   </div>
 </body>
 </html>
