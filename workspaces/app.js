@@ -257,7 +257,12 @@ $("logout").addEventListener("click",async()=>{lock();user=null;try{await sdk.si
 window.addEventListener("pagehide",stopGPS);
 setInterval(()=>{if(user&&session)request(prefix+"/session").catch(error=>note(error.message));},60000);
 async function start(){
- if(!operationsConfig.enabled){note("This workspace is not active. Driver approval and operational APIs must be deployed and accepted before sign-in opens.");return;}
+ if(!operationsConfig.enabled){
+  $("login").textContent="Sign-in paused — staging only";
+  $("login").disabled=true;
+  note("This workspace is not active. Driver approval and operational APIs must be deployed and accepted before sign-in opens.");return;
+ }
+ $("login").textContent="Continue with Google";
  if(firebaseConfig?.projectId!=="dispatch-1491f"||!firebaseConfig.apiKey){note("Google identity is not configured.");return;}
  try{
   const [apps,identity]=await Promise.all([import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")]);
