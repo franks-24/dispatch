@@ -58,7 +58,7 @@ node scripts/verify-dispatch-staging.mjs
 
 The verifier rejects the public domain and arbitrary HTTP hosts. It requires Franks24 staging HTML and `401/403` JSON + `no-store` on unauthenticated dispatcher, operations, driver and customer private API reads. A static GitHub Pages 404, disabled 503, unexpected 200 or other non-JSON response **fails** acceptance.
 
-For optional human-approved identity acceptance on that non-production origin, *after the security owner has cleared that test*, provide distinct pre-approved test-account ID tokens using private ephemeral environment variables `DISPATCH_STAGING_APPROVED_DISPATCHER_ID_TOKEN` and `DISPATCH_STAGING_UNAUTHORIZED_ID_TOKEN`, and set `DISPATCH_STAGING_REAL_IDENTITY_ACCEPTANCE=true`. Do not put these tokens into GitHub source, logs, screenshots or shell history. The verifier checks exact authorized role and unauthorized `403`; it prints **no tokens**.
+For optional human-approved identity acceptance on that non-production origin, *after the security owner has cleared that test*, **pin the exact origin hostname in `DISPATCH_STAGING_APPROVED_HOST`** and provide distinct pre-approved test-account ID tokens using private ephemeral environment variables `DISPATCH_STAGING_APPROVED_DISPATCHER_ID_TOKEN` and `DISPATCH_STAGING_UNAUTHORIZED_ID_TOKEN`, and set `DISPATCH_STAGING_REAL_IDENTITY_ACCEPTANCE=true`. Do not put these tokens into GitHub source, logs, screenshots or shell history. The verifier checks exact authorized role and unauthorized `403`; it prints **no tokens**.
 
 ### Functional staging matrix (not yet certified)
 
