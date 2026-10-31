@@ -10,7 +10,8 @@ test("shared theme, responsive navigation and footer work across every portal",a
   const current=await page.locator("body").evaluate(el=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color,font:getComputedStyle(el).fontFamily}));
   if(!theme)theme=current;else expect(current).toEqual(theme);
   for(const filename of ["delivery-terms.html","delivery-privacy.html","delivery-data.html"])await expect(page.locator('.f24-footer a[href$="'+filename+'"]').first()).toHaveCount(1);
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  const layout=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth,outliers:[...document.querySelectorAll('body *')].map(el=>({tag:el.tagName,id:el.id,className:typeof el.className==='string'?el.className:'',left:Math.round(el.getBoundingClientRect().left),right:Math.round(el.getBoundingClientRect().right),width:Math.round(el.getBoundingClientRect().width)})).filter(el=>el.width>0&&(el.right>innerWidth+1||el.left < -1)).slice(0,15)}));
+  expect(layout.width<=layout.viewport+1,JSON.stringify({path,...layout})).toBe(true);
   const menu=page.getByRole("button",{name:"Toggle navigation"});
   if(await menu.isVisible()){
    await expect(page.locator(".f24-nav")).toBeHidden();await menu.click();await expect(page.locator(".f24-nav")).toBeVisible();
