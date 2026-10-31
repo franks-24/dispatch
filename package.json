@@ -14,7 +14,8 @@
     "test:dispatcher": "node --test tests/dispatcher.test.mjs tests/dispatcher-routing.test.mjs delivery-functions/tests/dispatcher-auth.test.mjs",
     "test:release": "node --test tests/release-manifest.test.mjs",
     "test:operations": "node --test delivery-functions/tests/operations.test.mjs tests/capture-regressions.test.mjs tests/operations-ui.test.mjs tests/pages-publisher.test.mjs tests/staging-release-boundaries.test.mjs",
-    "test:site": "node --test tests/site-navigation.test.mjs"
+    "test:site": "node --test tests/site-navigation.test.mjs",
+    "test:staging": "node --test tests/staging-smoke.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
