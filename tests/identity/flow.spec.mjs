@@ -34,14 +34,14 @@ test("delivery preview accepts clicks and typing without sending live requests",
  const form=page.locator("#quote-form");
  for(const [name,value] of Object.entries({pickupArea:"Johannesburg 2001",deliveryArea:"Pretoria 0002",weightKg:"1",lengthCm:"20",widthCm:"15",heightCm:"10"}))await form.locator('[name="'+name+'"]').fill(value);
  await form.locator('[name="service"]').selectOption("express");
- await form.getByRole("button",{name:/Request a quote/}).click();
+ await form.getByRole("button",{name:/Review quote details/}).click();
  await expect(form.locator(".form-message")).toContainText("nothing has been sent");
  await page.getByRole("tab",{name:"Track a delivery",exact:true}).click();
  await page.locator('#tracking-form [name="reference"]').fill("F24-TEST");
  await page.locator('#tracking-form button').click();
  await expect(page.locator('#tracking-form .form-message')).toContainText("not open yet");
- await page.locator("#login").click();
- await expect(page.locator("#message")).toContainText(/Google sign-in/);
+ await expect(page.locator("#login")).toBeDisabled();
+ await expect(page.locator("#login")).toHaveText(/Sign-in paused/);
  expect(requests).toEqual([]);
  await expect(page.locator("header .brand")).toContainText("Franks24");
  await finishedLayout(page);
@@ -54,6 +54,7 @@ test("privacy and policy links lead to explicitly unapproved draft",async({page}
  await expect(page.locator("main")).toContainText("Driver GPS");
 });
 test("live custom domain responds, checking new copy only once published",async({page},info)=>{
+ test.skip(process.env.DISPATCH_GOOGLE_SECURITY_CLEARED!=="true","P0 Safe Browsing warning: never open flagged public site in a browser before owner clearance.");
  const response=await page.goto("https://dispatch.franks24.com/",{waitUntil:"domcontentloaded"});
  expect(response?.status()).toBe(200);
  await expect(page.locator("#hero-heading")).toBeVisible();
@@ -67,6 +68,7 @@ test("Dispatcher staff login preview is distinct and locked until directory veri
  await page.goto("/dispatcher/",{waitUntil:"domcontentloaded"});
  await expect(page.getByRole("heading",{name:/Dispatcher/})).toBeVisible();
  await expect(page.locator("#staff-login")).toBeDisabled();
+ await expect(page.locator("#staff-login")).toHaveText("Access paused — security review");
  await expect(page.locator("#staff-workspace")).toBeHidden();
  await expect(page.locator("#staff-status")).toContainText(/paused for security review|not live yet|disabled pending/i);
  await finishedLayout(page);
