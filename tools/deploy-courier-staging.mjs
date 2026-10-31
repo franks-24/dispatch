@@ -8,7 +8,7 @@ const run=(command,args,{capture=false}={})=>{
  if(result.status!==0)throw Error("Command failed: "+command+" "+args.slice(0,3).join(" ")+(capture?". Authenticate and inspect the command in your trusted shell.":""));
  return capture?result.stdout:"";
 };
-run(process.execPath,["--test","delivery-functions/tests/service.test.mjs","delivery-functions/tests/operations.test.mjs","delivery-functions/tests/dispatcher-directory.test.mjs","tests/capture-regressions.test.mjs","tests/operations-ui.test.mjs"]);
+run(process.execPath,["--test","delivery-functions/tests/service.test.mjs","delivery-functions/tests/operations.test.mjs","delivery-functions/tests/dispatcher-directory.test.mjs","tests/capture-regressions.test.mjs","tests/operations-ui.test.mjs","tests/staging-release-boundaries.test.mjs"]);
 if(!process.argv.includes("--deploy")){
  run(process.execPath,["tools/build-firebase-dispatcher.mjs"]);
  console.log("Closed staging artifact prepared. No cloud resources, billing, credentials or domains changed.");
@@ -22,7 +22,8 @@ if(env.DISPATCH_POLICIES_APPROVED!=="true"||env.DELIVERY_DATABASE_EDITION!=="STA
  throw Error("Reviewed courier/driver policies and a verified Standard database are required.");
 if(new Set(env.DISPATCH_FINANCE_UIDS.split(",").map(v=>v.trim()).filter(Boolean)).size<2)
  throw Error("Configure at least two independent finance reviewers.");
-if(!/^[a-z0-9-]{6,63}$/.test(env.DISPATCH_STAGING_SITE))throw Error("Invalid staging site ID.");
+if(!/^[a-z0-9-]{6,63}$/.test(env.DISPATCH_STAGING_SITE)||env.DISPATCH_STAGING_SITE==="dispatch-1491f")
+ throw Error("A dedicated non-production Firebase Hosting staging site is required.");
 const firebase=(args,options)=>run("npx",["-y","firebase-tools@latest",...args,"--project","dispatch-1491f"],options);
 firebase(["--version"]);
 firebase(["projects:list","--json"],{capture:true});
@@ -42,13 +43,13 @@ if(!enabled.split(/\r?\n/).includes("iamcredentials.googleapis.com"))
  throw Error("Enable iamcredentials.googleapis.com before deploying.");
 const settings={...Object.fromEntries(names.filter(n=>n!=="DISPATCH_STAGING_SITE").map(n=>[n,env[n]])),
  DELIVERY_ENABLED:"true",DISPATCH_SESSION_ENABLED:"true",DISPATCH_INVENTORY_ENABLED:"true",DISPATCH_OPERATIONS_ENABLED:"true",
- DISPATCH_APPLICANTS_ENABLED:"true",DISPATCH_POLICIES_APPROVED:"true",
+ DISPATCH_APPLICANTS_ENABLED:"false",DISPATCH_POLICIES_APPROVED:"true",
  DISPATCH_AI_ENABLED:"false",DISPATCH_WHATSAPP_ENABLED:"false"};
 await writeFile(new URL("../delivery-functions/.env.dispatch-1491f",import.meta.url),Object.entries(settings).map(([k,v])=>k+"="+JSON.stringify(v)).join("\n")+"\n",{mode:0o600});
 env.ENABLE_DISPATCHER_UI="true";env.ENABLE_OPERATIONS_UI="true";
-env.ENABLE_CUSTOMER_UI="true";env.ENABLE_APPLICANT_UI="true";env.DISPATCH_POLICIES_APPROVED="true";
+env.ENABLE_CUSTOMER_UI="true";env.ENABLE_APPLICANT_UI="false";env.DISPATCH_POLICIES_APPROVED="true";
 run(process.execPath,["tools/build-firebase-dispatcher.mjs"]);
 firebase(["target:apply","hosting","dispatcher-prototype",env.DISPATCH_STAGING_SITE]);
-firebase(["deploy","--config","firebase.dispatcher.json","--only","functions:franks24-deliveries:deliveriesApi,functions:franks24-deliveries:dispatcherApi,functions:franks24-deliveries:courierOperationsApi,functions:franks24-deliveries:driverApplicationsApi"]);
+firebase(["deploy","--config","firebase.dispatcher.json","--only","functions:franks24-deliveries:deliveriesApi,functions:franks24-deliveries:dispatcherApi,functions:franks24-deliveries:courierOperationsApi"]);
 firebase(["hosting:channel:deploy","courier-acceptance","--expires","7d","--only","dispatcher-prototype","--config","firebase.dispatcher.json"]);
 console.log("Preview deployed. Authorize its exact host for Google sign-in, then perform the real-account and private-storage acceptance runbook. No DNS or live Hosting channel was switched.");
