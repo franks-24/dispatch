@@ -1,0 +1,70 @@
+{
+  "functions": [
+    {
+      "source": "delivery-functions",
+      "codebase": "franks24-deliveries",
+      "ignore": [
+        "node_modules",
+        "tests",
+        ".env.example",
+        "*.json.tmp"
+      ]
+    }
+  ],
+  "hosting": {
+    "target": "driver-applicant-prototype",
+    "public": ".firebase-applicants-public",
+    "ignore": [
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "private, no-store"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          }
+        ]
+      },
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/driver/application",
+        "function": {
+          "functionId": "driverApplicationsApi",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "driverApplicationsApi",
+          "region": "europe-west1"
+        }
+      }
+    ]
+  }
+}
