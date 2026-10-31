@@ -19,3 +19,6 @@ export const deliveriesApi=onRequest({region:"europe-west1",cors:false,maxInstan
 
 // Staff API: same-origin Hosting rewrite; no browser-side privileged credentials.
 export {dispatcherApi} from "./dispatcher-function.js";
+
+// Meta webhook validates raw body signatures before storing review-only drafts.
+export {whatsappInbound} from "./whatsapp-function.js";
