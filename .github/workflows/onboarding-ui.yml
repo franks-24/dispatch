@@ -1,10 +1,10 @@
 name: Onboarding and legal UI validation
 on:
   pull_request:
-    paths: ['index.html', 'assets/**', 'legal/**', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
+    paths: ['index.html', 'assets/**', 'dispatcher/**', 'legal/**', 'tests/dispatcher.test.mjs', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
   push:
     branches: [main]
-    paths: ['index.html', 'assets/**', 'legal/**', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
+    paths: ['index.html', 'assets/**', 'dispatcher/**', 'legal/**', 'tests/dispatcher.test.mjs', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
 permissions:
   contents: read
 jobs:
@@ -16,6 +16,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate onboarding and current legal release
-        run: npm run test:onboarding
+        run: npm run test:onboarding && npm run test:dispatcher
       - name: Validate public Firebase config injection
         run: npm run test:config

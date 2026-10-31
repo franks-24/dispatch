@@ -60,3 +60,9 @@ To preview locally, run `python3 -m http.server 8080` and visit http://localhost
 6. Review the migration/retirement of old recruitment Firestore collections separately. Verify final CI, CodeRabbit/Codex reviewer findings, mobile layout and production smoke tests before releasing.
 
 **No production acceptance, booking, payment or SSO success is claimed by this repository.**
+
+## Internal Workspace Directory → Dispatcher
+
+Internal staff use [Dispatcher staff preview](https://dispatch.franks24.com/dispatcher/) rather than the public customer delivery desk. The staff sign-in is **closed by default**. Only a verified, active Google Workspace Directory user in the designated Dispatcher group may receive a server-approved `dispatcher` session. No employee is granted Dispatcher privileges solely by a matching email suffix, a self-selected role or a legacy recruitment account.
+
+The server-side authorizer is implemented in `delivery-functions/dispatcher-auth.js`, with negative-access tests. Google Workspace customer ID, authorized Dispatcher group, Directory API delegated identity and same-origin session endpoint require administrator configuration. The staff preview remains locked until these checks work and production Google SSO is verified. See [Dispatcher identity specification](docs/dispatcher-workspace-identity.md).

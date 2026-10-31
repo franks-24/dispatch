@@ -10,7 +10,8 @@
     "test:config": "node --test tests/firebase-config.test.mjs",
     "test:identity:unit": "node --test tests/identity/session.test.mjs tests/identity/activation.test.mjs",
     "test:identity": "playwright test --config tests/identity/playwright.config.mjs",
-    "test:deliveries": "node --test tests/deliveries.test.mjs"
+    "test:deliveries": "node --test tests/deliveries.test.mjs",
+    "test:dispatcher": "node --test tests/dispatcher.test.mjs delivery-functions/tests/dispatcher-auth.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",

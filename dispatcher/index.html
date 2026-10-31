@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#0b1722">
+<meta name="description" content="Franks24 Dispatch internal staff workspace preview. Access requires verified Google Workspace Directory membership.">
+<title>Dispatcher staff workspace | Franks24</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="stylesheet" href="./styles.css">
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header class="staff-header">
+<a href="../" class="staff-brand">FRANKS24 <span>/ DISPATCHER</span></a>
+<a href="../deliveries/">Customer delivery preview ↗</a>
+</header>
+<main id="main" class="staff-main">
+<section class="staff-card" aria-labelledby="staff-heading">
+<p class="eyebrow"><span class="eyebrow-dot"></span> INTERNAL GOOGLE WORKSPACE DIRECTORY</p>
+<h1 id="staff-heading">Dispatcher<span class="accent-star">✳</span></h1>
+<p class="staff-lead">A dedicated staff entry point for verified members of the internal Workspace directory. Customer and driver accounts do not inherit Dispatcher access.</p>
+<div class="staff-status" id="staff-status" role="status" aria-live="polite">Staff sign-in preview is disabled pending authorized-directory, backend and security verification.</div>
+<div class="staff-actions"><button id="staff-login" class="button button-primary button-large" type="button" disabled>Continue with Google ↗</button>
+<button id="staff-logout" class="button button-outline button-large" type="button" hidden>Sign out</button></div>
+<div id="staff-workspace" class="staff-workspace" hidden>
+<h2>Internal Dispatcher access verified</h2>
+<p>The authenticated staff identity was validated by the server. Operational assignment, fleet and proof-of-delivery actions remain unavailable until separately implemented and authorized.</p>
+</div>
+<p class="staff-footnote">Access is confirmed by the server against the live Workspace directory and a designated Dispatcher group—not by an email suffix, a self-selected role or browser storage. No operations are available in preview.</p>
+</section>
+</main>
+<footer class="staff-footer">FRANKS24 / DISPATCH · STAFF ACCESS CONTROLLED</footer>
+</body></html>

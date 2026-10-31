@@ -17,3 +17,6 @@
 @media(max-width:970px){.dispatch-nav-cta{font-size:12px}.dispatch-hero{padding-top:40px}.topnav{gap:14px}}
 @media(max-width:650px){.site-header{height:auto;min-height:92px;gap:14px;padding-top:16px;padding-bottom:16px;align-items:flex-start}.topnav{flex-wrap:wrap;justify-content:flex-end;gap:9px}.topnav>a:not(.dispatch-nav-cta){display:none}.brand-word{font-size:23px}.brand-word small{font-size:7px;letter-spacing:1px}.dispatch-hero{padding-top:20px}.dispatch-actions .button{width:100%;min-height:54px}.dispatch-text-link{width:100%;justify-content:center}.dispatch-availability{font-size:12px}.dispatch-legal-note{padding:26px 5%}}
 @media(prefers-reduced-motion:reduce){.visual-orbit,.pulse,.window-signal{animation:none!important}}
+
+/* Keep the internal staff entry discoverable on mobile without changing customer navigation. */
+@media(max-width:650px){.topnav>a.dispatch-nav-staff{display:inline-flex!important;color:#b8f477;font-size:12px}}

@@ -27,3 +27,7 @@ Do not make Google browser config or successful GitHub Pages deployment synonymo
 
 ## Release decision
 Feature branch / PR only. Merge after checks and reviews. GitHub Pages may deploy the new public landing on merge, but the delivery backend and payment/booking capabilities remain disabled. Rollback is a PR revert; do not delete data or disable authentication controls as a rollback shortcut.
+
+## Internal staff directory for Dispatcher
+
+Per the operational identity model, verified active users in the internal Google Workspace Directory who are in the approved Dispatcher group sign in through `/dispatcher/`. Public customers use the customer delivery desk; drivers require their own verification process. A server-side `dispatcher-auth.js` authorizer verifies Firebase Google identity, Directory customer ID, active status and group membership. The staff UI fails closed while Directory credentials, the trusted same-origin session backend and Google SSO remain unconfigured. See [Dispatcher identity design](dispatcher-workspace-identity.md).
