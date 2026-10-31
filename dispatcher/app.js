@@ -1,3 +1,4 @@
+import {setInventorySession} from "./inventory.js";
 import {firebaseConfig} from "../assets/config.js";
 import {dispatcherConfig} from "./config.js";
 
@@ -6,6 +7,7 @@ let auth,sdk,currentVersion=0;
 const login=$("staff-login");
 const note=text=>{$("staff-status").textContent=text;};
 const close=()=>{
+ setInventorySession(null);
  $("staff-workspace").hidden=true;
  $("staff-logout").hidden=true;
  $("staff-account").textContent="";
@@ -34,6 +36,7 @@ async function authorize(user){
   if(version!==currentVersion)return;
   if(result.role!=="dispatcher"||result.workspace!=="dispatcher")throw Error("Dispatcher access was not verified.");
   $("staff-workspace").hidden=false;
+  setInventorySession(user);
   $("staff-logout").hidden=false;
   $("staff-account").textContent=user.email||"Verified staff account";
   login.textContent="Switch Google account";
