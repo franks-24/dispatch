@@ -1,4 +1,9 @@
 import {test,expect} from "@playwright/test";
+async function finishedLayout(page){
+ await page.evaluate(async()=>{await document.fonts.ready;await Promise.all([...document.images].map(image=>image.decode().catch(()=>{})));});
+ const layout=await page.evaluate(()=>({width:document.documentElement.scrollWidth,viewport:innerWidth,outliers:[...document.querySelectorAll("body *")].map(el=>({tag:el.tagName,id:el.id,left:Math.round(el.getBoundingClientRect().left),right:Math.round(el.getBoundingClientRect().right)})).filter(el=>el.right>innerWidth+1||el.left < -1).slice(0,12)}));
+ expect(layout.width<=layout.viewport+1,JSON.stringify({url:page.url(),...layout})).toBe(true);
+}
 test("public Franks24 Dispatch landing has delivery navigation and no recruitment UI",async({page},info)=>{
  await page.goto("/",{waitUntil:"domcontentloaded"});
  await expect(page.locator("#hero-heading")).toBeVisible();
@@ -7,7 +12,7 @@ test("public Franks24 Dispatch landing has delivery navigation and no recruitmen
  for(const fragment of ["quote","booking","tracking"])await expect(page.locator('a[href="./deliveries/#'+fragment+'"]')).toBeVisible();
  await expect(page.locator("[data-login]")).toHaveCount(0);
  expect(await page.locator("main").innerText()).not.toMatch(/post a job|I'm hiring|job seeker/i);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await finishedLayout(page);
  await page.screenshot({path:info.outputPath("courier-landing.png"),fullPage:true});
 });
 test("delivery preview accepts clicks and typing without sending live requests",async({page},info)=>{
@@ -39,7 +44,7 @@ test("delivery preview accepts clicks and typing without sending live requests",
  await expect(page.locator("#message")).toContainText(/Google sign-in/);
  expect(requests).toEqual([]);
  await expect(page.locator("header .brand")).toContainText("Franks24");
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await finishedLayout(page);
  await page.screenshot({path:info.outputPath("delivery-editable-preview.png"),fullPage:true});
 });
 test("privacy and policy links lead to explicitly unapproved draft",async({page})=>{
@@ -54,7 +59,7 @@ test("live custom domain responds, checking new copy only once published",async(
  await expect(page.locator("#hero-heading")).toBeVisible();
  // This checks reachability only. The post-deployment verifier waits for the
  // exact GitHub commit manifest before requiring production content to match.
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await finishedLayout(page);
  await page.screenshot({path:info.outputPath("live-custom-domain.png"),fullPage:true});
 });
 
@@ -64,7 +69,7 @@ test("Dispatcher staff login preview is distinct and locked until directory veri
  await expect(page.locator("#staff-login")).toBeDisabled();
  await expect(page.locator("#staff-workspace")).toBeHidden();
  await expect(page.locator("#staff-status")).toContainText(/not live yet|disabled pending/i);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await finishedLayout(page);
  await page.screenshot({path:info.outputPath("dispatcher-staff-locked.png"),fullPage:true});
 });
 

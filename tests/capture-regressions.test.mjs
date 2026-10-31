@@ -6,19 +6,19 @@ import {validateCaptureInput} from "../delivery-functions/smart-capture.js";
 const source=await readFile(new URL("../dispatcher/inventory.js",import.meta.url),"utf8");
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function browser(fetch,getUserMedia){
- const elements=new Map();let resets=0;
+ const elements=new Map(),documentListeners={};let resets=0;
  const element=id=>{
   if(!elements.has(id))elements.set(id,{id,listeners:{},value:id==="item-quantity"?"1":"",files:[],hidden:true,textContent:"",
    addEventListener(name,callback){this.listeners[name]=callback;},replaceChildren(){},append(){},focus(){},pause(){},async play(){},removeAttribute(){},
    reset(){resets++;element("item-photo").files=[];},getContext(){return {drawImage(){}};},toBlob(callback){callback({size:6,arrayBuffer:async()=>Uint8Array.from([255,216,255,1,2,3]).buffer});}});
   return elements.get(id);
  };
- const context={document:{getElementById:element,createElement:element},window:{addEventListener(){},BarcodeDetector:{},createImageBitmap:true},
+ const context={document:{getElementById:element,createElement:element,addEventListener(name,callback){documentListeners[name]=callback;}},window:{addEventListener(){},BarcodeDetector:{},createImageBitmap:true},
   BarcodeDetector:class{static async getSupportedFormats(){return ["code_128"];}async detect(){return [];}},
   navigator:{mediaDevices:{getUserMedia}},location:{origin:"https://test.invalid"},URL,fetch,crypto:{randomUUID:()=>"12345678-1234-1234-1234-123456789012"},setTimeout,clearTimeout,
   createImageBitmap:async file=>{if(file.invalid)throw Error("Could not decode photo.");return {width:10,height:10,close(){}};},Uint8Array,btoa:value=>Buffer.from(value,"binary").toString("base64")};
  vm.runInNewContext(source.replace("export function setInventorySession","function setInventorySession")+"\nglobalThis.session=setInventorySession;",context);
- return {element,context,resets:()=>resets};
+ return {element,context,resets:()=>resets,dispatch(name,detail){documentListeners[name]?.({detail});}};
 }
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json"}});
 test("late camera permission cannot start a camera after staff logout",async()=>{
@@ -28,6 +28,26 @@ test("late camera permission cannot start a camera after staff logout",async()=>
  const pending=f.element("scan-barcode").listeners.click();await requested;
  f.context.session(null);resolveCamera({getTracks:()=>[{stop(){stopped++;}}]});await pending;
  assert.equal(stopped,1);assert.equal(f.element("barcode-video").srcObject,null);
+});
+
+test("switching away from inventory stops an active camera and its detection loop",async()=>{
+ let stopped=0;
+ const f=browser(async()=>json({items:[]}),async()=>({getTracks:()=>[{stop(){stopped++;}}]}));
+ f.context.session({getIdToken:async()=>"staff"});await tick();
+ await f.element("scan-barcode").listeners.click();
+ assert.equal(f.element("barcode-video").hidden,false);
+ f.dispatch("franks24:panel-deactivate",{id:"inventory-panel"});
+ assert.equal(stopped,1);assert.equal(f.element("barcode-video").hidden,true);assert.equal(f.element("barcode-video").srcObject,null);
+});
+
+test("switching panels invalidates pending camera permission before its stream is attached",async()=>{
+ let resolveCamera,started,stopped=0;const requested=new Promise(resolve=>{started=resolve;});
+ const f=browser(async()=>json({items:[]}),()=>{started();return new Promise(resolve=>{resolveCamera=resolve;});});
+ f.context.session({getIdToken:async()=>"staff"});await tick();
+ const pending=f.element("scan-barcode").listeners.click();await requested;
+ f.dispatch("franks24:panel-deactivate",{id:"inventory-panel"});
+ resolveCamera({getTracks:()=>[{stop(){stopped++;}}]});await pending;
+ assert.equal(stopped,1);assert.equal(f.element("barcode-video").hidden,true);assert.equal(f.element("barcode-video").srcObject,null);
 });
 test("failed photo upload retries the existing item without creating a duplicate",async()=>{
  let created=0,uploads=0,photoAvailable=false;

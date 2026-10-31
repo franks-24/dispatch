@@ -273,4 +273,7 @@ $("inventory-form").addEventListener("submit",async event=>{
  finally{uploading=false;$("inventory-save").disabled=false;}
 });
 window.addEventListener("pagehide",stopScan);
+document.addEventListener("franks24:panel-deactivate",event=>{
+ if(event.detail?.id==="inventory-panel")stopScan();
+});
 

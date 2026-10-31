@@ -9,7 +9,7 @@ test("staff portal is distinct from customer and driver onboarding",async()=>{
  assert.match(page,/id="staff-account"/);
  assert.match(page,/Scan inventory item/);
  assert.match(page,/href="\.\.\/operations\/#jobs"/);
- assert.match(page,/href="\.\.\/deliveries\/#tracking"/);
+ assert.match(page,/href="\.\.\/operations\/#shipments"/);
  assert.match(page,/id="inventory-form"/);
  assert.match(page,/id="whatsapp-panel"/);
  assert.doesNotMatch(page,/Coming soon/);
