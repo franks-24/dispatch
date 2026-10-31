@@ -52,7 +52,7 @@ test("closed staging tree has no operational UI and no active Google collection"
   cwd:fileURLToPath(root),env:{...process.env,ENABLE_APPLICANT_UI:"false"},encoding:"utf8",timeout:30000});
  assert.equal(run.status,0,run.stderr||run.stdout);
  const dir=new URL("../.firebase-applicants-public/",import.meta.url);
- assert.match(await readFile(new URL("driver/apply-config.js",dir),"utf8"),/enabled:false/);
+ assert.match(await readFile(new URL("driver/apply-config.js",dir),"utf8"),/"enabled":false/);
  for(const path of ["dispatcher/index.html","operations/index.html","driver/index.html","deliveries/index.html","workspaces/app.js"])
   await assert.rejects(access(new URL(path,dir)),/ENOENT/);
  assert.match(await readFile(new URL("404.html",dir),"utf8"),/Not available in applicant staging/);
