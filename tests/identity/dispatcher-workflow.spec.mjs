@@ -34,3 +34,31 @@ test("operations queue deep link survives sign-in and a late old-tab response ca
  const response=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith("/quotes"));releaseQuote();await (await response).finished();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  await expect(page.locator("#content")).toContainText("Current fixture driver");await expect(page.locator("#content")).not.toContainText("Late old quote");
 });
+
+async function staffPreview(page){
+ await googleFixture(page);
+ await page.route("**/dispatcher/config.js",route=>route.fulfill({contentType:"text/javascript",body:'export const dispatcherConfig={enabled:true,sessionApi:"/api/dispatcher/session"};'}));
+ await page.route("**/workspaces/config.js",route=>route.fulfill({contentType:"text/javascript",body:'export const operationsConfig={enabled:true,policyVersion:"fixture-approved"};'}));
+ await page.route("**/api/dispatcher/**",route=>{
+  const path=new URL(route.request().url()).pathname;
+  return json(route,path.endsWith("/session")?{role:"dispatcher",workspace:"dispatcher"}:path.includes("/whatsapp/")?{drafts:[]}:{items:[]});
+ });
+ await page.route("**/api/operations/**",route=>json(route,new URL(route.request().url()).pathname.endsWith("/session")?{role:"dispatcher",canReview:false,canReconcile:false}:{items:[]}));
+}
+test("staff delivery-records shortcut reaches the staff-authorized bookings view",async({page})=>{
+ await staffPreview(page);await page.goto("/dispatcher/");await page.locator("#staff-login").click();await expect(page.locator("#staff-workspace")).toBeVisible();
+ await page.getByRole("link",{name:/Delivery records/}).click();await expect(page).toHaveURL(/\/operations\/#shipments$/);
+ await page.locator("#login").click();await expect(page.locator("#tabs").getByRole("button",{name:"Bookings",exact:true})).toHaveAttribute("aria-pressed","true");await expect(page.locator("#workspace")).toBeVisible();
+});
+test("switching away from inventory cancels a pending camera request before attaching its stream",async({page})=>{
+ await staffPreview(page);
+ await page.addInitScript(()=>{
+  window.__scanStopped=0;
+  window.BarcodeDetector=class{static async getSupportedFormats(){return ['code_128'];}async detect(){return [];}};
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:()=>new Promise(resolve=>{window.__resolveCamera=()=>resolve({getTracks:()=>[{stop(){window.__scanStopped++;}}]});})}});
+ });
+ await page.goto("/dispatcher/");await page.locator("#staff-login").click();await expect(page.locator("#inventory-panel")).toBeVisible();await page.locator("#scan-barcode").click();
+ await expect.poll(()=>page.evaluate(()=>typeof window.__resolveCamera)).toBe("function");
+ await page.getByRole("tab",{name:"WhatsApp inbox",exact:true}).click();await page.evaluate(()=>window.__resolveCamera());
+ await expect.poll(()=>page.evaluate(()=>window.__scanStopped)).toBe(1);await expect(page.locator("#barcode-video")).toHaveJSProperty("hidden",true);await expect(page.locator("#barcode-video")).toHaveJSProperty("srcObject",null);
+});
