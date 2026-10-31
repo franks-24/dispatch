@@ -34,14 +34,14 @@ test("delivery preview accepts clicks and typing without sending live requests",
  const form=page.locator("#quote-form");
  for(const [name,value] of Object.entries({pickupArea:"Johannesburg 2001",deliveryArea:"Pretoria 0002",weightKg:"1",lengthCm:"20",widthCm:"15",heightCm:"10"}))await form.locator('[name="'+name+'"]').fill(value);
  await form.locator('[name="service"]').selectOption("express");
- await form.getByRole("button",{name:/Request a quote/}).click();
+ await form.getByRole("button",{name:/Review quote details/}).click();
  await expect(form.locator(".form-message")).toContainText("nothing has been sent");
  await page.getByRole("tab",{name:"Track a delivery",exact:true}).click();
  await page.locator('#tracking-form [name="reference"]').fill("F24-TEST");
  await page.locator('#tracking-form button').click();
  await expect(page.locator('#tracking-form .form-message')).toContainText("not open yet");
- await page.locator("#login").click();
- await expect(page.locator("#message")).toContainText(/Google sign-in/);
+ await expect(page.locator("#login")).toBeDisabled();
+ await expect(page.locator("#login")).toHaveText(/Sign-in paused/);
  expect(requests).toEqual([]);
  await expect(page.locator("header .brand")).toContainText("Franks24");
  await finishedLayout(page);
@@ -67,6 +67,7 @@ test("Dispatcher staff login preview is distinct and locked until directory veri
  await page.goto("/dispatcher/",{waitUntil:"domcontentloaded"});
  await expect(page.getByRole("heading",{name:/Dispatcher/})).toBeVisible();
  await expect(page.locator("#staff-login")).toBeDisabled();
+ await expect(page.locator("#staff-login")).toHaveText("Access paused — security review");
  await expect(page.locator("#staff-workspace")).toBeHidden();
  await expect(page.locator("#staff-status")).toContainText(/not live yet|disabled pending/i);
  await finishedLayout(page);
