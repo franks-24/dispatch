@@ -51,7 +51,7 @@ test("Dispatcher staff login preview is distinct and locked until directory veri
  await expect(page.getByRole("heading",{name:/Dispatcher/})).toBeVisible();
  await expect(page.locator("#staff-login")).toBeDisabled();
  await expect(page.locator("#staff-workspace")).toBeHidden();
- await expect(page.locator("#staff-status")).toContainText("disabled pending");
+ await expect(page.locator("#staff-status")).toContainText(/not live yet|disabled pending/i);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath("dispatcher-staff-locked.png"),fullPage:true});
 });

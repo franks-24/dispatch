@@ -6,6 +6,12 @@ test("staff portal is distinct from customer and driver onboarding",async()=>{
  const [root,page,config]=await Promise.all([read("index.html"),read("dispatcher/index.html"),read("dispatcher/config.js")]);
  assert.match(root,/href="\.\/dispatcher\//);
  assert.match(page,/INTERNAL GOOGLE WORKSPACE DIRECTORY/);
+ assert.match(page,/id="staff-account"/);
+ assert.match(page,/Scan inventory item/);
+ assert.match(page,/Open dispatch queue · Coming soon/);
+ assert.match(page,/id="inventory-form"/);
+ assert.match(page,/id="whatsapp-panel"/);
+ assert.match(page,/button type="button" disabled/);
  assert.match(page,/id="staff-login"[^>]*disabled/);
  assert.match(config,/enabled:\s*false/);
  assert.match(config,/sessionApi:"\/api\/dispatcher\/session"/);

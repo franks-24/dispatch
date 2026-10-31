@@ -1,0 +1,47 @@
+name: Dispatcher mobile inventory and Firebase Hosting checks
+on:
+  pull_request:
+    paths:
+      - 'dispatcher/**'
+      - 'delivery-functions/**'
+      - 'firebase.dispatcher.json'
+      - 'tools/build-firebase-dispatcher.mjs'
+      - 'tests/dispatcher.test.mjs'
+      - '.github/workflows/dispatcher-inventory-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dispatcher/**'
+      - 'delivery-functions/**'
+      - 'firebase.dispatcher.json'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax validation
+        run: |
+          node --check delivery-functions/dispatcher-directory.js
+          node --check delivery-functions/inventory-service.js
+          node --check delivery-functions/dispatcher-function.js
+          node --check dispatcher/inventory.js
+          node --check dispatcher/app.js
+          node --check tools/build-firebase-dispatcher.mjs
+      - name: Verify staff deny-by-default, inventory and photo security
+        run: node --test tests/dispatcher.test.mjs tests/dispatcher-routing.test.mjs delivery-functions/tests/dispatcher-auth.test.mjs delivery-functions/tests/inventory.test.mjs
+      - name: Build Firebase Hosting staging without activating production
+        run: |
+          node tools/build-firebase-dispatcher.mjs
+          node --input-type=module -e 'import {readFileSync} from "node:fs"; const c=JSON.parse(readFileSync("firebase.dispatcher.json"));if(!c.hosting.rewrites.some(r=>r.source==="/api/dispatcher/**"))process.exit(1);const cfg=readFileSync(".firebase-dispatcher-public/dispatcher/config.js","utf8");if(!cfg.includes("enabled:false"))process.exit(1);'
+      - name: Validate opt-in prototype build (no deployment)
+        env:
+          ENABLE_DISPATCHER_UI: 'true'
+        run: |
+          node tools/build-firebase-dispatcher.mjs
+          node --input-type=module -e 'import {readFileSync} from "node:fs";const cfg=readFileSync(".firebase-dispatcher-public/dispatcher/config.js","utf8");if(!cfg.includes("enabled:true"))process.exit(1);'
