@@ -62,3 +62,32 @@ test("switching away from inventory cancels a pending camera request before atta
  await page.getByRole("tab",{name:"WhatsApp inbox",exact:true}).click();await page.evaluate(()=>window.__resolveCamera());
  await expect.poll(()=>page.evaluate(()=>window.__scanStopped)).toBe(1);await expect(page.locator("#barcode-video")).toHaveJSProperty("hidden",true);await expect(page.locator("#barcode-video")).toHaveJSProperty("srcObject",null);
 });
+
+test("operations list searches and filters real loaded records with page-scoped counts on mobile",async({page})=>{
+ await googleFixture(page);
+ await page.route("**/workspaces/config.js",route=>route.fulfill({contentType:"text/javascript",body:'export const operationsConfig={enabled:true,policyVersion:"fixture-approved"};'}));
+ await page.route("**/api/operations/**",route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith("/session"))return json(route,{role:"dispatcher",canReview:false,canReconcile:false});
+  if(path.endsWith("/quotes"))return json(route,{items:[
+   {id:"q1",pickupArea:"Johannesburg",deliveryArea:"Pretoria",status:"pending",weightKg:1,service:"economy",lengthCm:10,widthCm:10,heightCm:10},
+   {id:"q2",pickupArea:"Durban",deliveryArea:"Cape Town",status:"quoted",weightKg:2,service:"express",lengthCm:20,widthCm:20,heightCm:20}
+  ],nextCursor:null});
+  return json(route,{items:[],nextCursor:null});
+ });
+ await page.goto("/operations/");
+ await page.locator("#login").click();
+ const cards=page.locator(".records-page .card");
+ await expect(cards).toHaveCount(2);
+ await expect(page.locator(".records-page [role=status]")).toContainText("Showing 2 of 2 loaded records on this page");
+ await expect(page.locator(".records-page")).toContainText("Not a fleet-wide total");
+ await page.getByRole("searchbox",{name:"Search records on this page"}).fill("Pretoria");
+ await expect(cards.nth(0)).toBeVisible();
+ await expect(cards.nth(1)).toBeHidden();
+ await page.getByRole("searchbox",{name:"Search records on this page"}).clear();
+ await page.getByLabel("Filter records by status").selectOption("quoted");
+ await expect(cards.nth(0)).toBeHidden();
+ await expect(cards.nth(1)).toBeVisible();
+ await expect(page.locator(".records-page [role=status]")).toContainText("Showing 1 of 2 loaded records on this page");
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
