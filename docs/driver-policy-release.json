@@ -1,0 +1,23 @@
+{
+  "status": "pending_legal_approval",
+  "version": "",
+  "effectiveAt": "",
+  "approvedAt": "",
+  "approvedBy": "",
+  "approvalReference": "",
+  "responsibleParty": "",
+  "informationOfficerContact": "",
+  "retentionScheduleReference": "",
+  "popiaReviewReference": "",
+  "documents": {
+    "legal/delivery-terms.html": {
+      "sha256": ""
+    },
+    "legal/delivery-privacy.html": {
+      "sha256": ""
+    },
+    "legal/delivery-data.html": {
+      "sha256": ""
+    }
+  }
+}

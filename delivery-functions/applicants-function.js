@@ -24,7 +24,8 @@ export const driverApplicationsApi=onRequest({
  if(process.env.DISPATCH_APPLICANTS_ENABLED!=="true"||
     process.env.DISPATCH_POLICIES_APPROVED!=="true"||
     !process.env.DISPATCH_DRIVER_POLICY_VERSION||
-    process.env.DISPATCH_DRIVER_POLICY_VERSION.toLowerCase().includes("draft"))
+    process.env.DISPATCH_DRIVER_POLICY_VERSION.toLowerCase().includes("draft")||
+    !/^[a-f0-9]{64}$/.test(process.env.DISPATCH_POLICY_RELEASE_SHA256||""))
   return res.status(503).json({error:"Driver applications are not yet open."});
  if(req.rawBody?.length>4096)return res.status(413).json({error:"Application request is too large."});
  try{
