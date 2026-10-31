@@ -1,7 +1,7 @@
 // Franks24 mobile inventory capture. The camera is never used until staff taps Scan.
 // Only the trusted Dispatcher API persists records and generates tracking references.
 const $=id=>document.getElementById(id);
-let staff=null,epoch=0,items=[],stream=null,scanTimer=null,uploading=false,previewURL=null;
+let staff=null,epoch=0,items=[],stream=null,scanTimer=null,uploading=false,previewURL=null,saveRequestKey=null;
 const status=text=>{$("inventory-status").textContent=text;};
 const nextState={registered:"packed",packed:"dispatched",dispatched:"delivered"};
 const endpoint="/api/dispatcher/items";
@@ -21,14 +21,14 @@ function photoPreview(){
  if(file){previewURL=URL.createObjectURL(file);img.src=previewURL;}
  else img.removeAttribute("src");
 }
-async function request(path,method="GET",body,identity=staff){
+async function request(path,method="GET",body,identity=staff,extraHeaders={}){
  if(!identity)throw Error("Sign in to manage inventory.");
  const token=await identity.getIdToken();
  const url=new URL(path,location.origin);
  if(url.origin!==location.origin||!url.pathname.startsWith("/api/dispatcher/items"))throw Error("Invalid inventory route.");
  const response=await fetch(url.href,{method,headers:{
    Authorization:"Bearer "+token,Accept:"application/json",
-   ...(body?{"Content-Type":"application/json"}:{})
+   ...(body?{"Content-Type":"application/json"}:{}),...extraHeaders
  },body:body?JSON.stringify(body):undefined,cache:"no-store",redirect:"error"});
  if(!response.ok){
   let message="Inventory request failed.";
@@ -37,6 +37,37 @@ async function request(path,method="GET",body,identity=staff){
  }
  if(!(response.headers.get("content-type")||"").startsWith("application/json"))throw Error("Invalid server response.");
  return response.json();
+}
+function recommend(){
+ const input=$("item-name"),lookup=$("product-suggestions"),hint=$("product-match-hint");
+ if(!input||!lookup||!hint)return;
+ const query=(input.value||$("item-sku").value||$("item-barcode").value).trim().toLowerCase();
+ lookup.replaceChildren();hint.textContent="";
+ if(query.length<2)return;
+ const seen=new Set();
+ const matches=items.filter(x=>{
+  const key=(x.sku||x.barcode||x.name||"").toLowerCase();
+  if(!key||seen.has(key))return false;
+  const hit=[x.name,x.sku,x.barcode].some(v=>String(v||"").toLowerCase().includes(query));
+  if(hit)seen.add(key);return hit;
+ }).sort((a,b)=>{
+  const score=x=>[x.barcode,x.sku,x.name].some(v=>String(v||"").toLowerCase()===query)?0:1;
+  return score(a)-score(b);
+ }).slice(0,6);
+ for(const item of matches){
+  const button=document.createElement("button");button.type="button";
+  button.className="product-suggestion";
+  button.textContent=item.name+" · "+(item.sku||item.barcode||"Previous item");
+  button.addEventListener("click",()=>{
+   $("item-name").value=item.name;
+   $("item-sku").value=item.sku||"";
+   $("item-barcode").value=item.barcode||"";
+   // Quantity and dispatch-specific fields must be confirmed by Frank.
+   lookup.replaceChildren();hint.textContent="Product details suggested from earlier inventory. Verify quantity and condition.";
+   $("item-quantity").focus();
+  });lookup.append(button);
+ }
+ if(matches.length)hint.textContent="Select a previous item to reuse its description, SKU and barcode.";
 }
 function render(){
  const root=$("inventory-list");root.replaceChildren();
@@ -96,7 +127,7 @@ async function refresh(user=staff,version=epoch){
   const result=await request(endpoint,"GET",undefined,user);
   if(version!==epoch)return;
   items=Array.isArray(result.items)?result.items:[];
-  render();status("Inventory synchronized. "+items.length+" recent records.");
+  render();recommend();status("Inventory synchronized. "+items.length+" recent records.");
  }catch(error){if(version===epoch)status(error.message);}
 }
 async function photoPayload(file){
@@ -129,12 +160,13 @@ export function setInventorySession(identity){
  $("inventory-panel").hidden=!identity;
  $("inventory-list").replaceChildren();
  if(!identity){
-  $("inventory-form").reset();photoPreview();status("Sign in as approved Dispatcher staff.");
+  $("inventory-form").reset();saveRequestKey=null;photoPreview();status("Sign in as approved Dispatcher staff.");
   return;
  }
  refresh(identity,epoch);
 }
 $("inventory-search").addEventListener("input",render);
+for(const id of ["item-name","item-sku","item-barcode"])$(id).addEventListener("input",recommend);
 $("item-photo").addEventListener("change",photoPreview);
 $("inventory-refresh").addEventListener("click",()=>refresh());
 $("scan-barcode").addEventListener("click",async()=>{
@@ -185,7 +217,8 @@ $("inventory-form").addEventListener("submit",async event=>{
  const image=$("item-photo").files?.[0],version=epoch;
  uploading=true;$("inventory-save").disabled=true;
  try{
-  const result=await request(endpoint,"POST",payload);
+  saveRequestKey ||= (crypto.randomUUID?crypto.randomUUID().replaceAll("-","")+"inventory":"inventory"+Date.now().toString(36)+Math.random().toString(36).slice(2,15));
+  const result=await request(endpoint,"POST",payload,staff,{"Idempotency-Key":saveRequestKey});
   if(version!==epoch)return;
   const tracking=result.item.tracking;
   status("Item recorded: "+tracking+(image?". Uploading private photo…":""));
@@ -197,7 +230,7 @@ $("inventory-form").addEventListener("submit",async event=>{
    }catch(error){status("Item "+tracking+" saved, but photo was not attached: "+error.message);}
   }
   if(version!==epoch)return;
-  form.reset();photoPreview();await refresh();
+  form.reset();saveRequestKey=null;photoPreview();recommend();await refresh();
   status("Saved inventory item "+tracking+". "+(image?"Check photo status in the list.":""));
  }catch(error){if(version===epoch)status(error.message);}
  finally{uploading=false;$("inventory-save").disabled=false;}
