@@ -1,6 +1,10 @@
 node_modules/
+.npm-cache/
 .identity-tests/
 test-results/
 playwright-report/
 dist/
 *.log
+
+# Generated Firebase Hosting artifact (contains public web app IDs only)
+.firebase-dispatcher-public/

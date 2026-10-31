@@ -55,15 +55,40 @@ export function createService({store, verifyToken, readProof, enabled=false, pol
       if(previous){requireValue(previous.digest===digest,409,"Idempotency key conflicts with an earlier request.");return previous.response;}
       const now=clock(), at=new Date(now).toISOString();
       const response=await mutation(tx,parent,at,now);
-      tx.create(`${parent}/agreements/${uuid()}`,{uid,acceptance:body.acceptance,acceptedAt:at,operation,requestDigest:digest});
+      if(body.acceptance)tx.create(`${parent}/agreements/${uuid()}`,{uid,acceptance:body.acceptance,acceptedAt:at,operation,requestDigest:digest});
       tx.create(path,{digest,response,createdAt:at,operation});return response;
     });
   }
   async function execute(uid, method, url, headers, body) {
     const parent=customerPath(uid), route=url.pathname;
+
+    if(method==="GET"&&route==="/api/deliveries/profile"){
+      const profile=await store.get(parent);
+      return {profile:profile?{displayName:profile.displayName,phone:profile.phone,updatedAt:profile.updatedAt}:null};
+    }
+    if(method==="POST"&&route==="/api/deliveries/profile"){
+      fields(body,["displayName","phone","acceptance"]);consent(body.acceptance,policyVersion);
+      const displayName=text(body.displayName,2,120),phone=text(body.phone,7,30);
+      requireValue(/^\+?[\d ()-]{7,30}$/.test(phone),400,"Invalid contact phone.");
+      return write(uid,"profile",headers["idempotency-key"],body,async(tx,parent,at)=>{
+        tx.set(parent,{displayName,phone,updatedAt:at});
+        return {profile:{displayName,phone,updatedAt:at}};
+      });
+    }
+    if(method==="POST"&&route==="/api/deliveries/privacy-requests"){
+      fields(body,["type","details"]);
+      requireValue(["access","correction","erasure","withdrawal"].includes(body.type),400,"Select a supported privacy request.");
+      const details=text(body.details,3,1000);
+      return write(uid,"privacy-request",headers["idempotency-key"],body,async(tx,parent,at)=>{
+        const request={id:uuid(),type:body.type,details,status:"received_for_review",createdAt:at};
+        tx.create(parent+"/privacyRequests/"+request.id,request);
+        tx.create("dispatchPrivacyQueue/"+request.id,{...request,customerUid:uid});
+        return {request};
+      });
+    }
     if(method==="POST" && route==="/api/deliveries/quotes") {
       const data=quoteFields(body);consent(body.acceptance,policyVersion);
-      return write(uid,"quote",headers["idempotency-key"],body,async(tx,parent,at)=>{const id=uuid();const response={id,status:"pending"};tx.create(`${parent}/quotes/${id}`,{...data,...response,createdAt:at,updatedAt:at});return response;});
+      return write(uid,"quote",headers["idempotency-key"],body,async(tx,parent,at)=>{const id=uuid();const response={id,status:"pending"};tx.create(`${parent}/quotes/${id}`,{...data,...response,createdAt:at,updatedAt:at});tx.create(`dispatchQuoteQueue/${hash(uid+":"+id)}`,{id:hash(uid+":"+id),customerUid:uid,quoteId:id,...data,status:"pending",createdAt:at});return response;});
     }
     if(method==="POST" && route==="/api/deliveries/bookings") {
       const data=bookingFields(body);consent(body.acceptance,policyVersion);
@@ -73,7 +98,7 @@ export function createService({store, verifyToken, readProof, enabled=false, pol
         requireValue(quote.status==="quoted" && Date.parse(quote.expiresAt)>now && Number.isSafeInteger(quote.totalMinor) && quote.totalMinor>0 && quote.currency==="ZAR" && quote.coverageApproved===true,409,"Quote is unavailable, expired or already booked.");
         const id=uuid(), response={id,reference:id,status:"requested"};
         tx.create(`${parent}/shipments/${id}`,{...response,...data,pickupArea:quote.pickupArea,deliveryArea:quote.deliveryArea,service:quote.service,totalMinor:quote.totalMinor,currency:quote.currency,createdAt:at,updatedAt:at,events:[{status:"requested",at,description:"Collection requested; awaiting confirmation."}]});
-        tx.set(quotePath,{...quote,status:"booked",shipmentId:id,updatedAt:at});return response;
+        tx.set(quotePath,{...quote,status:"booked",shipmentId:id,updatedAt:at});tx.create(`dispatchShipmentQueue/${hash(uid+":"+id)}`,{id:hash(uid+":"+id),customerUid:uid,shipmentId:id,reference:response.reference,status:"requested",pickupArea:quote.pickupArea,deliveryArea:quote.deliveryArea,createdAt:at});return response;
       });
     }
     if(method==="GET" && ["/api/deliveries/quotes","/api/deliveries/shipments"].includes(route)) {

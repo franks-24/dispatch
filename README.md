@@ -8,6 +8,8 @@
 
 **Public domain:** https://dispatch.franks24.com/ · **Customer preview:** https://dispatch.franks24.com/deliveries/ · **Firebase project:** `dispatch-1491f` · **No Vercel**.
 
+See the [current build and acceptance record](docs/build-acceptance-2026-10-31.md) for phase status, entry points, deployment commands and remaining integrations.
+
 ## Current capabilities and production status
 
 | Area | Status |
@@ -16,7 +18,7 @@
 | Google identity | Firebase browser config injected during GitHub Pages publication; live human Google SSO **not yet verified** |
 | Customer delivery desk | `/deliveries/` has request forms, shipment history, tracking timeline, proof retrieval client; **disabled** |
 | Backend API | `delivery-functions/` provides Firebase HTTP function, Firestore transaction adapter, operator CLI, idempotency and proof protection in source; **not deployed** |
-| Driver and dispatcher workspaces | Planned; not yet implemented or authorized for public use |
+| Driver and dispatcher workspaces | Implemented in source: intake/vetting, offers, assignments, messages, progress/POD, optional GPS and external-settlement reconciliation; **not activated** |
 | Live pricing, bookings and payments | **Unavailable**. No fabricated quote, carrier confirmation, location or delivery event |
 | Delivery policies | Draft only; operator/legal/POPIA/privacy review required |
 | Hosting | GitHub Pages publishes static files; backend hosting and billing require separate approval |
@@ -44,6 +46,7 @@ npm run test:onboarding
 npm run test:config
 npm run test:identity:unit
 npm run test:deliveries
+npm run test:operations
 npx playwright install --with-deps chromium webkit
 npm run test:identity
 ```
@@ -66,3 +69,10 @@ To preview locally, run `python3 -m http.server 8080` and visit http://localhost
 Internal staff use [Dispatcher staff preview](https://dispatch.franks24.com/dispatcher/) rather than the public customer delivery desk. The staff sign-in is **closed by default**. Only a verified, active Google Workspace Directory user in the designated Dispatcher group may receive a server-approved `dispatcher` session. No employee is granted Dispatcher privileges solely by a matching email suffix, a self-selected role or a legacy recruitment account.
 
 The server-side authorizer is implemented in `delivery-functions/dispatcher-auth.js`, with negative-access tests. Google Workspace customer ID, authorized Dispatcher group, Directory API delegated identity and same-origin session endpoint require administrator configuration. The staff preview remains locked until these checks work and production Google SSO is verified. See [Dispatcher identity specification](docs/dispatcher-workspace-identity.md).
+
+## Deployment integrity
+
+GitHub Pages publishes only an allowlisted static staging directory. CI creates a public `dispatch-release.json` inside the uploaded artifact containing `{schemaVersion,product,revision}`. The post-merge identity check waits until the custom domain serves the expected `GITHUB_SHA`, then checks the courier landing and public Firebase app configuration. This avoids brittle byte-for-byte HTML comparisons and deployment race conditions. The manifest contains no secrets. See `tools/write-release-manifest.mjs`, `tests/release-manifest.test.mjs`, and `scripts/verify-dispatch-live.mjs`.
+
+A successful release-marker check does **not** prove real Google OAuth sign-in; production authorized-domain and Directory membership activation remain tracked in issues #13 and #14.
+

@@ -12,7 +12,7 @@ const ready = () => Boolean(user && roleResolved && config.enabled && config.pol
 const api = createDeliveryApi({base:config.apiBase, origin:location.origin, getUser:()=>user});
 function message(text) {$("message").textContent = text;}
 function syncControls() {
-  for (const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","refresh"]) $(id).disabled = !ready();
+  for (const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","profile-fields","privacy-fields","refresh"]) $(id).disabled = !ready();
   $("login").hidden = Boolean(user); $("logout").hidden = !user;
   $("identity").textContent = user ? `Signed in as ${user.email || "Google user"}.` : "Sign in to access your quotes and private shipment history.";
   $("availability").textContent = !config.enabled || !config.policiesApproved ? "Preview — delivery requests are not open yet. No bookings or payments are accepted." : "Request a quote to begin. Collection is subject to booking confirmation and route availability.";
@@ -20,7 +20,7 @@ function syncControls() {
 function clearPrivate() {
   epoch++; roleResolved=!dispatcherConfig.enabled; quotes = []; attempts.clear();
   shipmentCursor=null;quoteCursor=null;$("more-shipments").hidden=true;$("more-quotes").hidden=true;
-  for (const id of ["quote-form","booking-form","tracking-form"]) $(id).reset();
+  for (const id of ["quote-form","booking-form","tracking-form","profile-form","privacy-form"]) $(id).reset();
   document.querySelectorAll('form button[type="submit"]').forEach(button=>button.disabled=false);
   for (const id of ["history","tracking-result","quotes"]) $(id).replaceChildren();
   $("history-note").textContent = "Sign in to see your shipments. No sample deliveries are shown.";
@@ -58,9 +58,11 @@ async function refresh() {
   const version=epoch;
   $("refresh").disabled=true;$("history-note").textContent="Loading your workspace…";
   try {
-    const [quotePage, shipmentPage]=await Promise.all([api.quotes(),api.shipments()]);
+    const [quotePage, shipmentPage,customer]=await Promise.all([api.quotes(),api.shipments(),api.profile()]);
     if(version!==epoch)return;
     if(!Array.isArray(quotePage.items)||!Array.isArray(shipmentPage.items))throw new Error("The delivery service returned an invalid workspace.");
+    $("customer-name").value=customer.profile?.displayName||"";
+    $("customer-phone").value=customer.profile?.phone||"";
     quotes=quotePage.items;quoteOptions();
     quoteCursor=quotePage.nextCursor;shipmentCursor=shipmentPage.nextCursor;
     $("more-quotes").hidden=!quoteCursor;$("more-shipments").hidden=!shipmentCursor;
@@ -83,6 +85,15 @@ function submit(id, build, send, after) {
     finally{if(version===epoch)button.disabled=false;}
   });
 }
+submit("profile-form",data=>({displayName:data.displayName.trim(),phone:data.phone.trim()}),(body,consent,key)=>api.saveProfile(body,consent,key),()=>message("Customer details saved with your current policy acknowledgments."));
+$("privacy-form").addEventListener("submit",async event=>{
+ event.preventDefault();if(!ready())return;
+ const version=epoch,form=event.currentTarget,button=form.querySelector("button");
+ const body=Object.fromEntries(new FormData(form));button.disabled=true;
+ try{const result=await api.privacyRequest(body,idempotency("privacy-form",body));if(version!==epoch)return;attempts.delete("privacy-form");form.reset();message("Privacy request "+result.request.id+" recorded for human review. This does not confirm data export or erasure.");}
+ catch(error){if(version===epoch)message(error.message);}
+ finally{if(version===epoch)button.disabled=false;}
+});
 submit("quote-form",quoteInput,(body,consent,key)=>api.quote(body,consent,key),result=>message(`Quote request received${result.id ? `: ${result.id}` : ""}. A price will appear after review.`));
 submit("booking-form",data=>bookingInput(data,quotes.find(q=>q.id===data.quoteId)),(body,consent,key)=>api.book(body,consent,key),result=>{$("booking-form").reset();message(result.status==="confirmed" ? `Booking confirmed: ${result.reference || result.id}.` : `Booking request received${result.id ? `: ${result.id}` : ""}. Await confirmation before handing over your parcel.`);});
 $("tracking-form").addEventListener("submit",async event=>{
@@ -126,3 +137,4 @@ async function initialize() {
   }catch{message("Google sign-in is temporarily unavailable. Please try again later.");}
 }
 initialize();
+

@@ -1,10 +1,87 @@
 {
-  "functions": [{"source":"delivery-functions","codebase":"franks24-deliveries","ignore":["node_modules","tests",".env.example","*.json.tmp"]}],
+  "functions": [
+    {
+      "source": "delivery-functions",
+      "codebase": "franks24-deliveries",
+      "ignore": [
+        "node_modules",
+        "tests",
+        ".env.example",
+        "*.json.tmp"
+      ]
+    }
+  ],
   "hosting": {
-    "target":"deliveries-staging",
-    "public":".",
-    "ignore":["firebase*.json","firestore.rules","delivery-functions/**","tests/**","docs/**","outputs/**","work/**","**/node_modules/**","**/.*","**/*.md","package*.json"],
-    "headers":[{"source":"/api/deliveries/**","headers":[{"key":"Cache-Control","value":"private, no-store"}]}],
-    "rewrites":[{"source":"/api/deliveries/**","function":{"functionId":"deliveriesApi","region":"europe-west1"}}]
+    "target": "deliveries-staging",
+    "public": ".firebase-dispatcher-public",
+    "ignore": [
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "private, no-store"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          }
+        ]
+      },
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/driver/**",
+        "function": {
+          "functionId": "courierOperationsApi",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/api/operations/**",
+        "function": {
+          "functionId": "courierOperationsApi",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/webhooks/whatsapp",
+        "function": {
+          "functionId": "whatsappInbound",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/api/dispatcher/**",
+        "function": {
+          "functionId": "dispatcherApi",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/api/deliveries/**",
+        "function": {
+          "functionId": "deliveriesApi",
+          "region": "europe-west1"
+        }
+      }
+    ]
   }
 }
