@@ -66,6 +66,8 @@ The runtime independently checks live database and private proof-bucket metadata
 
 ## Session blockers
 
+Two successful Pages deployment paths were observed, while the current public dispatch-release.json returned 404 and the previous push's published-revision verification failed. The deployment workflow now refuses to publish unless Pages reports build_type=workflow. A repository administrator must select GitHub Actions under Settings > Pages > Build and deployment > Source: https://github.com/franks-24/dispatch/settings/pages. The connector does not expose that administrative mutation and the browser could not be controlled. The setting has not been changed in this session.
+
 GitHub connector access works. Direct Git/npm network access is unavailable, no authenticated Firebase CLI/MCP is exposed, and browser attachment to the existing Google Cloud session failed. Firebase settings, database/bucket IAM, Directory delegation and real-account acceptance were not changed or verified. The earlier user confirmation of Blaze is retained; billing was not changed again.
 
 The public preview is not a production courier launch.

@@ -161,14 +161,27 @@ export function setInventorySession(identity){
  $("inventory-panel").hidden=!identity;
  $("inventory-list").replaceChildren();
  if(!identity){
-  $("inventory-form").reset();saveRequestKey=null;pendingPhoto=null;photoPreview();status("Sign in as approved Dispatcher staff.");
+  $("inventory-form").reset();saveRequestKey=null;pendingPhoto=null;photoPreview();$("inventory-save").textContent="Save inventory item";$("inventory-skip-photo").hidden=true;status("Sign in as approved Dispatcher staff.");
   return;
  }
  refresh(identity,epoch);
 }
 $("inventory-search").addEventListener("input",render);
 for(const id of ["item-name","item-sku","item-barcode"])$(id).addEventListener("input",recommend);
-$("item-photo").addEventListener("change",photoPreview);
+$("item-photo").addEventListener("change",()=>{
+ photoPreview();
+ if(pendingPhoto&&$("item-photo").files?.[0]){
+  pendingPhoto.file=$("item-photo").files[0];
+  status("Replacement photo selected for saved item "+pendingPhoto.tracking+". Tap Retry photo.");
+ }
+});
+$("inventory-skip-photo").addEventListener("click",()=>{
+ if(!pendingPhoto||uploading)return;
+ const tracking=pendingPhoto.tracking;
+ pendingPhoto=null;saveRequestKey=null;$("inventory-form").reset();photoPreview();
+ $("inventory-save").textContent="Save inventory item";$("inventory-skip-photo").hidden=true;
+ status("Item "+tracking+" remains saved without a photo. Ready for the next item.");
+});
 $("inventory-refresh").addEventListener("click",()=>refresh());
 $("scan-barcode").addEventListener("click",async()=>{
  if(stream){stopScan();status("Camera stopped.");return;}
@@ -244,6 +257,7 @@ $("inventory-form").addEventListener("submit",async event=>{
     await refresh(identity,version);
     if(!items.some(item=>item.tracking===tracking&&item.photoAvailable)){
      $("inventory-save").textContent="Retry photo for "+tracking;
+     $("inventory-skip-photo").hidden=false;
      status("Item "+tracking+" is saved. Photo not attached: "+error.message+". Tap Retry photo; this will not create another item.");
      return;
     }
@@ -253,6 +267,7 @@ $("inventory-form").addEventListener("submit",async event=>{
   pendingPhoto=null;form.reset();saveRequestKey=null;photoPreview();recommend();await refresh(identity,version);
   if(version!==epoch)return;
   $("inventory-save").textContent="Save inventory item";
+  $("inventory-skip-photo").hidden=true;
   status("Saved inventory item "+tracking+".");
  }catch(error){if(version===epoch)status(error.message);}
  finally{uploading=false;$("inventory-save").disabled=false;}

@@ -94,6 +94,7 @@ test("sequential driver progress requires private proof and creates one immutabl
  const performance=await s.call("dispatcher","/api/operations/drivers/"+hash("driver")+"/performance?days=7");
  assert.equal(performance.body.completed,1);assert.equal(performance.body.onTime,1);assert.equal(performance.body.accepted,1);assert.equal(performance.body.proofCompliancePercent,100);
  const shipment=await s.store.get(customerPath("customer")+"/shipments/shipment");assert.equal(shipment.status,"delivered");assert.ok(shipment.proof);
+ assert.equal((await s.store.get("dispatchShipmentQueue/"+hash("customer:shipment"))).status,"delivered");
  assert.equal((await s.call("driver",driverJob(id))).body.delivery,undefined);
 });
 test("recorded external settlement needs a different authorized finance reviewer",async()=>{
@@ -105,9 +106,10 @@ test("recorded external settlement needs a different authorized finance reviewer
  assert.equal((await s.call("finance1","/api/operations/settlements",submit)).status,201);
  const path="/api/operations/settlements/"+id+"/reconcile";
  assert.equal((await s.call("finance1",path,{statementReference:"statement-1"})).status,409);
+ await s.call("reviewer","/api/operations/drivers/"+hash("driver")+"/suspend",{reason:"Operational approval under review"});
  assert.equal((await s.call("finance2",path,{statementReference:"statement-1"})).status,201);
  assert.equal((await s.call("finance2",path,{statementReference:"statement-1"})).status,409);
- const ledger=await s.call("driver","/api/driver/ledger");assert.equal(ledger.body.items.length,2);
+ const ledger=await s.store.list("dispatchDrivers/"+hash("driver")+"/ledger",{limit:30});assert.equal(ledger.items.length,2);
 });
 test("GPS is accepted only on an active assignment with current consent; stale coordinates are hidden",async()=>{
  const s=setup(),id=(await s.offer()).body.job.id,path=driverJob(id,"location");
@@ -152,6 +154,9 @@ test("customer request flows through staff pricing, booking confirmation and dri
  const booking=await call("bookings",{quoteId:quote.body.id,pickupAddress:"Private collection",deliveryAddress:"Private destination",recipientName:"Fixture recipient",recipientPhone:"+27110000000",acceptance},"customer-booking-key");
  assert.equal(booking.status,201);
  const shipments=await s.call("dispatcher","/api/operations/shipments"),entry=shipments.body.items[0];
+ const detail=await s.call("dispatcher","/api/operations/shipments/"+entry.id);
+ assert.equal(detail.status,200);assert.equal(detail.body.shipment.deliveryAddress,"Private destination");
+ assert.equal((await s.call("driver","/api/driver/shipments/"+entry.id)).status,404);
  assert.equal((await s.call("dispatcher","/api/operations/shipments/"+entry.id+"/confirm",{carrierReference:"ACTUAL-CARRIER-BOOKING",bookingVerified:true})).status,201);
  const offered=await s.call("dispatcher","/api/operations/jobs",{customerUid:entry.customerUid,shipmentId:entry.shipmentId,driverId:hash("driver"),feeMinor:15000,feePolicyVersion:"driver-policy-1",dueAt:future});
  assert.equal(offered.status,201);

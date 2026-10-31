@@ -13,6 +13,7 @@ const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof v
 const digest=body=>hash(JSON.stringify(canonical(body)));
 const driverPath=uid=>"dispatchDrivers/"+hash(uid);
 const jobPath=jobId=>"dispatchJobs/"+jobId;
+const queueEntry=(job,status,at)=>({id:hash(job.customerUid+":"+job.shipmentId),customerUid:job.customerUid,shipmentId:job.shipmentId,reference:job.reference,status,pickupArea:job.pickupArea,deliveryArea:job.deliveryArea,createdAt:job.createdAt,updatedAt:at});
 const activeStatuses=["accepted","collected","in_transit","out_for_delivery","exception"];
 const transitions={accepted:["collected","exception"],collected:["in_transit","exception"],in_transit:["out_for_delivery","exception"],out_for_delivery:["delivered","exception"],exception:["in_transit","out_for_delivery"]};
 export const vettingCriteria=Object.freeze(["eligibility","identity","rightToWork","contact","licence","prdp","vehicle","insurance","riskReview","beneficiary","agreement","safety"]);
@@ -100,6 +101,16 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
    return {...page,items:page.items.map(record=>collection==="jobs"?jobView(record,true):collection==="drivers"?{id:record.id,name:record.name,email:record.email,status:record.status,validUntil:record.validUntil,vehicle:record.vehicle,region:record.region}:record)};
   }
   let queueMatch=route.match(/^\/api\/operations\/(quotes|shipments)\/([a-f0-9]{64})\/(issue|confirm)$/);
+  const bookingDetail=route.match(/^\/api\/operations\/shipments\/([a-f0-9]{64})$/);
+  if(!isDriver&&method==="GET"&&bookingDetail){
+   return store.transaction(async tx=>{
+    const entry=await tx.get("dispatchShipmentQueue/"+bookingDetail[1]);requireValue(entry,404,"Booking unavailable.");
+    const shipment=await tx.get(customerPath(entry.customerUid)+"/shipments/"+entry.shipmentId);requireValue(shipment,404,"Booking unavailable.");
+    tx.create("dispatchOperationsAudit/"+uuid(),{actor:actor.uid,action:"booking-detail-read",shipmentId:entry.shipmentId,createdAt:new Date(clock()).toISOString()});
+    const {id,reference,status,pickupArea,deliveryArea,pickupAddress,deliveryAddress,recipientName,recipientPhone,totalMinor,currency}=shipment;
+    return {shipment:{id,reference,status,pickupArea,deliveryArea,pickupAddress,deliveryAddress,recipientName,recipientPhone,...(Number.isSafeInteger(totalMinor)?{totalMinor,currency}:{})}};
+   });
+  }
   if(!isDriver&&method==="POST"&&queueMatch){
    const [,type,queueId,action]=queueMatch;
    requireValue(type==="quotes"&&action==="issue"||type==="shipments"&&action==="confirm",404,"Unknown queue action.");
@@ -219,7 +230,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
      const current=await tx.get(path);requireValue(current.status==="offered",409,"Offer is no longer available.");
      const dayMetric=await tx.get(metricPath(current.driverId,at));
      const updated={...current,status:"accepted",acceptedAt:at,updatedAt:at};
-     tx.set(path,updated);tx.set(metricPath(current.driverId,at),metric(dayMetric,{accepted:1,acceptanceMs:Math.max(0,Date.parse(at)-Date.parse(current.offeredAt||current.createdAt))}));return {job:jobView(updated)};
+     tx.set(path,updated);tx.set("dispatchShipmentQueue/"+hash(current.customerUid+":"+current.shipmentId),queueEntry(updated,"accepted",at));tx.set(metricPath(current.driverId,at),metric(dayMetric,{accepted:1,acceptanceMs:Math.max(0,Date.parse(at)-Date.parse(current.offeredAt||current.createdAt))}));return {job:jobView(updated)};
     },jobId);
    }
    if(action==="messages"){
@@ -273,6 +284,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
      const updated={...current,status:body.status,location:body.status==="delivered"?null:current.location||null,updatedAt:at};
      tx.set(path,updated);
      tx.set(metricPath(current.driverId,at),metric(dayMetric,{completed:body.status==="delivered"?1:0,onTime:body.status==="delivered"&&Date.parse(at)<=Date.parse(current.dueAt)?1:0,proofCompliant:body.status==="delivered"&&current.proof?1:0,exceptions:body.status==="exception"?1:0}));
+     tx.set("dispatchShipmentQueue/"+hash(current.customerUid+":"+current.shipmentId),queueEntry(updated,body.status,at));
      tx.set(shipmentPath,{...shipment,status:body.status,updatedAt:at,events:[...shipment.events,{status:body.status,description,at}],...(body.status==="delivered"?{proof:current.proof}:{})});
      if(body.status==="delivered")tx.create("dispatchDrivers/"+current.driverId+"/ledger/earning-"+jobId,{id:"earning-"+jobId,type:"earning",jobId,amountMinor:current.feeMinor,currency:"ZAR",createdAt:at,onTime:Date.parse(at)<=Date.parse(current.dueAt)});
      return {job:jobView(updated)};
@@ -292,7 +304,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
    return write(async(tx,at)=>{
     const job=await tx.get(jobPath(body.jobId)),prior=await tx.get("dispatchSettlements/"+body.jobId);
     requireValue(job?.status==="delivered"&&!prior,409,"Only a delivered unpaid job can be submitted.");
-    const driver=await tx.get("dispatchDrivers/"+job.driverId);approved(driver);
+    const driver=await tx.get("dispatchDrivers/"+job.driverId);requireValue(driver,404,"Driver record unavailable.");
     const settlement={id:body.jobId,jobId:body.jobId,driverId:job.driverId,status:"awaiting_independent_reconciliation",amountMinor:job.feeMinor,currency:"ZAR",bankReference,evidenceRef,submittedBy:actor.uid,createdAt:at};
     tx.create("dispatchSettlements/"+body.jobId,settlement);
     return {settlement};
@@ -304,7 +316,7 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
    return write(async(tx,at)=>{
     const path="dispatchSettlements/"+settlementId,settlement=await tx.get(path);
     requireValue(settlement?.status==="awaiting_independent_reconciliation"&&settlement.submittedBy!==actor.uid,409,"A different authorized finance reviewer must verify the external settlement.");
-    const driver=await tx.get("dispatchDrivers/"+settlement.driverId);approved(driver);
+    const driver=await tx.get("dispatchDrivers/"+settlement.driverId);requireValue(driver,404,"Driver record unavailable.");
     tx.set(path,{...settlement,status:"externally_reconciled",reconciledBy:actor.uid,statementReference,reconciledAt:at});
     tx.create("dispatchDrivers/"+settlement.driverId+"/ledger/settlement-"+settlementId,{id:"settlement-"+settlementId,type:"external_settlement",jobId:settlement.jobId,amountMinor:settlement.amountMinor,currency:"ZAR",createdAt:at});
     return {id:settlementId,status:"externally_reconciled"};
@@ -344,3 +356,4 @@ export function createOperationsService({store,verifyToken,authorizeStaff,lookup
   }
  }};
 }
+

@@ -21,5 +21,7 @@ jobs:
           node --check delivery-functions/operations-function.js
           node --check workspaces/app.js
           node --check deliveries/app.js
+          node --check tests/identity/operations.spec.mjs
       - name: Build closed Firebase staging
         run: node tools/build-firebase-dispatcher.mjs
+

@@ -7,7 +7,7 @@ const keys=new Map(),money=value=>new Intl.NumberFormat("en-ZA",{style:"currency
 const note=text=>{$("status").textContent=text;};
 const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;};
 function stopGPS(){if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;sharingJob=null;}
-function lock(){epoch++;controller.abort();controller=new AbortController();stopGPS();session=null;keys.clear();$("workspace").hidden=true;$("content").replaceChildren();$("tabs").replaceChildren();$("account").textContent="";}
+function lock(){epoch++;controller.abort();controller=new AbortController();stopGPS();session=null;selected=mode==="driver"?"jobs":"quotes";keys.clear();$("workspace").hidden=true;$("content").replaceChildren();$("tabs").replaceChildren();$("account").textContent="";}
 async function request(path,body){
  if(!user)throw Error("Sign in to continue.");
  const identity=user,version=epoch,url=new URL(path,location.origin);
@@ -120,6 +120,11 @@ async function load(){
   }else if(collection==="shipments"){
    const drivers=await request(prefix+"/drivers?limit=100");if(version!==epoch)return;
    for(const shipment of items){const c=card(root,shipment.pickupArea+" → "+shipment.deliveryArea,shipment.status);c.append(el("p","Reference "+shipment.reference));
+    button("View private booking details",async()=>{
+     const detail=await request(prefix+"/shipments/"+shipment.id);
+     const node=el("div");for(const [key,value]of Object.entries(detail.shipment))node.append(el("p",key.replaceAll(/([A-Z])/g," $1")+": "+String(value??"")));
+     c.append(node);
+    },c);
     if(shipment.status==="requested")form("Record actual carrier booking",c,f=>{field(f,"Carrier booking reference","carrierReference");field(f,"Carrier has confirmed this booking","bookingVerified",{type:"checkbox"});},"Confirm booked collection",async(_,f)=>{await request(prefix+"/shipments/"+shipment.id+"/confirm",{carrierReference:f.get("carrierReference"),bookingVerified:f.get("bookingVerified")==="yes"});await load();});
     if(shipment.status==="confirmed")form("Offer to approved driver",c,f=>{
      field(f,"Driver","driverId",{options:[["","Choose an approved driver"],...drivers.items.filter(d=>d.status==="approved").map(d=>[d.id,d.name+" · "+d.region])]});

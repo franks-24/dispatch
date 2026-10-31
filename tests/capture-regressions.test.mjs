@@ -16,7 +16,7 @@ function browser(fetch,getUserMedia){
  const context={document:{getElementById:element,createElement:element},window:{addEventListener(){},BarcodeDetector:{},createImageBitmap:true},
   BarcodeDetector:class{static async getSupportedFormats(){return ["code_128"];}async detect(){return [];}},
   navigator:{mediaDevices:{getUserMedia}},location:{origin:"https://test.invalid"},URL,fetch,crypto:{randomUUID:()=>"12345678-1234-1234-1234-123456789012"},setTimeout,clearTimeout,
-  createImageBitmap:async()=>({width:10,height:10,close(){}}),Uint8Array,btoa:value=>Buffer.from(value,"binary").toString("base64")};
+  createImageBitmap:async file=>{if(file.invalid)throw Error("Could not decode photo.");return {width:10,height:10,close(){}};},Uint8Array,btoa:value=>Buffer.from(value,"binary").toString("base64")};
  vm.runInNewContext(source.replace("export function setInventorySession","function setInventorySession")+"\nglobalThis.session=setInventorySession;",context);
  return {element,context,resets:()=>resets};
 }
@@ -49,4 +49,19 @@ test("supported 3 MiB JPEG does not overflow the base64 validator",()=>{
  const result=validateCaptureInput({image:{mime:"image/jpeg",base64:bytes.toString("base64")}});
  assert.equal(result.image.data.length,bytes.toString("base64").length);
  assert.throws(()=>validateCaptureInput({image:{mime:"image/jpeg",base64:bytes.toString("base64")+"="}}),/JPEG/);
+});
+
+test("an undecodable photo can be replaced while retaining the saved item",async()=>{
+ let created=0,uploads=0;
+ const f=browser(async(url,options)=>{
+  if(options.method==="GET")return json({items:[]});
+  if(new URL(url).pathname.endsWith("/photo")){uploads++;return json({photoAvailable:true});}
+  created++;return json({item:{tracking:"F24-20261031-BBBBBBBBBBBBBB"}},201);
+ });
+ f.context.session({getIdToken:async()=>"staff"});await tick();
+ f.element("item-name").value="Test parcel";f.element("item-photo").files=[{type:"image/jpeg",invalid:true}];
+ const submit=()=>f.element("inventory-form").listeners.submit({preventDefault(){},currentTarget:f.element("inventory-form")});
+ await submit();assert.equal(created,1);assert.equal(uploads,0);
+ f.element("item-photo").files=[{type:"image/jpeg"}];f.element("item-photo").listeners.change();
+ await submit();assert.equal(created,1);assert.equal(uploads,1);assert.equal(f.resets(),1);
 });
