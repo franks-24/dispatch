@@ -33,7 +33,7 @@ jobs:
         run: |
           mkdir -p public
           cp index.html CNAME .nojekyll public/
-          cp -R assets deliveries public/
+          cp -R assets deliveries legal public/
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:

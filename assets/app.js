@@ -36,7 +36,7 @@ function clearPrivateWorkspace(){
  state.profile=null;state.hasAgreement=false;state.approvedEmployer=false;
  ["jobs-list","profile-details"].forEach(id=>$(id).replaceChildren());
  ["user-name","user-role","dashboard-heading","onboard-email"].forEach(id=>setText(id,""));
- $("job-form").reset();$("job-form").hidden=true;$("new-job-button").hidden=true;
+ $("job-form").reset();$("job-form").hidden=true;$("new-job-button").hidden=true;$("save-job").disabled=false;
  $("onboarding-form").reset();$("onboard-submit").disabled=false;
 }
 const identitySession=createIdentitySession({
