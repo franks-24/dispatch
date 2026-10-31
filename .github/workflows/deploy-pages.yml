@@ -28,7 +28,7 @@ jobs:
           FIREBASE_WEB_CONFIG_JSON: ${{ vars.FIREBASE_WEB_CONFIG_JSON }}
         run: node tools/write-firebase-config.mjs
       - name: Validate customer preview, Firebase config and delivery client
-        run: npm run test:onboarding && npm run test:site && npm run test:config && npm run test:deliveries && npm run test:dispatcher && npm run test:release && npm run test:operations
+        run: npm run test:onboarding && npm run test:site && npm run test:config && npm run test:deliveries && npm run test:dispatcher && npm run test:release && npm run test:operations && npm run test:staging
       - name: Stage public static content only
         run: |
           mkdir -p public
