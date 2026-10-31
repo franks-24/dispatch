@@ -14,6 +14,7 @@ test("staff portal is distinct from customer and driver onboarding",async()=>{
 test("browser staff authorization uses same-origin server verification with no local role shortcut",async()=>{
  const app=await read("dispatcher/app.js");
  assert.match(app,/getIdToken\(true\)/);
+ assert.match(app,/initializeApp\(firebaseConfig,"franks24-deliveries"\)/);
  assert.match(app,/endpoint\.origin!==location\.origin/);
  assert.match(app,/redirect:"error"/);
  assert.match(app,/result\.role!=="dispatcher"/);

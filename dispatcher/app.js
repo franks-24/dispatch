@@ -32,7 +32,7 @@ async function start(){
  try{
   const [appSdk,authSdk]=await Promise.all([import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")]);
   sdk=authSdk;
-  const app=appSdk.initializeApp(firebaseConfig,"franks24-dispatcher");
+  const app=appSdk.initializeApp(firebaseConfig,"franks24-deliveries");
   auth=sdk.getAuth(app);
   await sdk.setPersistence(auth,sdk.browserSessionPersistence);
   sdk.onAuthStateChanged(auth,authorize,()=>{++currentVersion;close();note("Dispatcher identity verification failed.");});
