@@ -28,3 +28,10 @@
 .inventory-row-actions{display:flex;gap:9px;flex-wrap:wrap}
 .inventory-form button:focus-visible,.inventory-panel a:focus-visible,.inventory-panel input:focus-visible,.inventory-panel textarea:focus-visible{outline:3px solid #b8f477;outline-offset:3px}
 @media(max-width:520px){.inventory-fields-two{grid-template-columns:1fr}.inventory-panel{padding-top:18px}.inventory-scan button{width:100%}}
+
+.product-suggestions{display:grid;gap:5px}
+.product-suggestion{padding:11px 12px;min-height:44px;border-radius:9px;border:1px solid #6f9580;background:#244247;color:#f9fcf7;text-align:left;cursor:pointer;font-size:14px}
+.inventory-helper{font-size:13px;color:#d0ddd4;margin:0}
+.whatsapp-draft{padding:16px;background:#122b33;border:1px solid #5a8173;border-radius:13px;overflow-wrap:anywhere}
+.whatsapp-original{font-family:inherit;font-size:14px;white-space:pre-wrap;line-height:1.6;border-left:3px solid #b8f477;padding:12px;background:#14232d;max-height:240px;overflow:auto}
+.whatsapp-draft p{font-size:14px;line-height:1.6}
