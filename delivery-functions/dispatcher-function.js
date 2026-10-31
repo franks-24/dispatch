@@ -1,6 +1,5 @@
 import {randomUUID,createHash} from "node:crypto";
 import {onRequest} from "firebase-functions/v2/https";
-import {defineSecret} from "firebase-functions/params";
 import {initializeApp,getApps,applicationDefault} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getFirestore} from "firebase-admin/firestore";
@@ -13,20 +12,17 @@ import {createSmartCaptureService} from "./smart-capture.js";
 import {GoogleGenAI} from "@google/genai";
 import {validatePrivateBucket} from "./proof-policy.js";
 
-const directorySecret=defineSecret("DISPATCH_DIRECTORY_SA_JSON");
 let instance;
 const failure=(status,message)=>{throw new DispatcherAccessError(status,message);};
 
 function createRuntime(){
  const env=process.env,projectId=env.GCLOUD_PROJECT||env.GOOGLE_CLOUD_PROJECT;
  if(projectId!=="dispatch-1491f"||!env.DISPATCH_WORKSPACE_CUSTOMER_ID||
-  !env.DISPATCH_GROUP_EMAIL||!env.DISPATCH_DELEGATED_ADMIN_EMAIL||!directorySecret.value())
+  !env.DISPATCH_GROUP_EMAIL||!env.DISPATCH_DELEGATED_ADMIN_EMAIL)
   throw Error("Dispatcher identity not configured.");
  const app=getApps().find(a=>a.name==="franks24-dispatcher")||
   initializeApp({credential:applicationDefault(),projectId},"franks24-dispatcher");
- const directory=createWorkspaceDirectory({
-  credentialsJson:directorySecret.value(),delegatedAdminEmail:env.DISPATCH_DELEGATED_ADMIN_EMAIL
- });
+ const directory=createWorkspaceDirectory({delegatedAdminEmail:env.DISPATCH_DELEGATED_ADMIN_EMAIL});
  const authorizer=createDispatcherAuthorizer({
   verifyToken:token=>getAuth(app).verifyIdToken(token,true),
   lookupDirectoryUser:directory.lookupDirectoryUser,
@@ -174,7 +170,7 @@ function createRuntime(){
 }
 export const dispatcherApi=onRequest({
  region:"europe-west1",cors:false,maxInstances:2,concurrency:10,timeoutSeconds:40,
- memory:"512MiB",secrets:[directorySecret]
+ memory:"512MiB"
 },async(req,res)=>{
  res.set({"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"});
  if(process.env.DISPATCH_SESSION_ENABLED!=="true")
