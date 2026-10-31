@@ -70,7 +70,9 @@ if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
  const staffHtml=staffHtmlReply.ok?await staffHtmlReply.text():"";
  const staffJs=staffJsReply.ok?await staffJsReply.text():"";
  report.publishedDispatcherSecurityGate=staffHtml.includes("Access paused — security review") &&
-   staffJs.includes('login.textContent=dispatcherConfig.enabled ? "Continue with Google ↗" : "Access paused — security review"');
+   staffJs.includes('const pausedLabel="Access paused — security review"') &&
+   staffJs.includes('login.textContent=closedLabel()') &&
+   staffJs.includes('login.textContent=pausedLabel');
  await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
  assert.ok(report.publishedDispatcherSecurityGate,"Published dispatcher UI or JavaScript lost the closed security-review message.");
 }

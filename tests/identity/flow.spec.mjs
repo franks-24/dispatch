@@ -70,7 +70,7 @@ test("Dispatcher staff login preview is distinct and locked until directory veri
  await expect(page.locator("#staff-login")).toBeDisabled();
  await expect(page.locator("#staff-login")).toHaveText("Access paused — security review");
  await expect(page.locator("#staff-workspace")).toBeHidden();
- await expect(page.locator("#staff-status")).toContainText(/not live yet|disabled pending/i);
+ await expect(page.locator("#staff-status")).toContainText(/paused for security review|not live yet|disabled pending/i);
  await finishedLayout(page);
  await page.screenshot({path:info.outputPath("dispatcher-staff-locked.png"),fullPage:true});
 });
