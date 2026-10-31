@@ -77,8 +77,8 @@ if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
   dispatcherHtml.includes("Access paused — security review") &&
   dispatcherJs.includes('const pausedLabel="Access paused — security review"') &&
   dispatcherJs.includes("login.textContent=closedLabel();") &&
-  /enabled:\\s*false/.test(dispatcherConfig);
- await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\\n");
+  /enabled:\s*false/.test(dispatcherConfig);
+ await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
  assert.ok(report.publishedDispatcherSecurityGate,
   "Published Dispatcher security-pause UI or client config no longer matches the protected release.");
 }
