@@ -42,7 +42,8 @@ function render(data){
  }else note("Complete the fields below to request driver review. No operational access is granted.");
 }
 async function accountChanged(identity){
- const current=++epoch;controller.abort();controller=new AbortController();user=identity;
+ const current=++epoch;controller.abort();controller=new AbortController();
+ form.reset();submissionKey=null;submissionDigest="";user=identity;
  form.hidden=true;panel.hidden=true;$("application-summary").hidden=true;
  $("applicant-logout").hidden=!identity;$("applicant-login").hidden=!!identity;
  $("applicant-account").textContent=identity?.email||"";
