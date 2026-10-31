@@ -24,3 +24,5 @@ export {dispatcherApi} from "./dispatcher-function.js";
 export {whatsappInbound} from "./whatsapp-function.js";
 
 export {courierOperationsApi} from "./operations-function.js";
+
+export {driverApplicationsApi} from "./applicants-function.js";\n
