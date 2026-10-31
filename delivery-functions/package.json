@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --test tests/service.test.mjs tests/dispatcher-auth.test.mjs tests/inventory.test.mjs",
+    "test": "node --test tests/service.test.mjs tests/dispatcher-auth.test.mjs tests/inventory.test.mjs tests/operations.test.mjs",
     "test:emulator": "node --test tests/firestore.test.mjs",
     "operator": "node operator.js"
   },

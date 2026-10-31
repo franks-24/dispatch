@@ -52,3 +52,38 @@ test("Firestore pagination orders by created time and stays inside the customer'
   const first=await call("GET","/quotes?limit=1",undefined,uid);assert.equal(first.status,200);assert.equal(first.body.items[0].id,"newer");assert.equal(first.body.nextCursor,"newer");
   const next=await call("GET","/quotes?limit=1&cursor=newer",undefined,uid);assert.equal(next.body.items[0].id,"older");assert.equal(next.body.nextCursor,null);
 });
+
+test("real Firestore permits one driver acceptance and one earning under concurrent retries",async()=>{
+ const {createOperationsService}=await import("../operations-service.js"),{hash}=await import("../service.js");
+ const uid="emulator-ops-driver",driverId=hash(uid),future=new Date(Date.now()+86400000).toISOString();
+ await db.doc("dispatchDrivers/"+driverId).set({id:driverId,uid,email:uid+"@test.invalid",status:"approved",validUntil:future,createdAt:new Date().toISOString()});
+ await db.doc(customerPath("emulator-ops-customer")+"/shipments/ops-shipment").set({id:"ops-shipment",reference:"OPS-EMULATOR",status:"confirmed",carrierReference:"ACTUAL-TEST-CARRIER",pickupArea:"Johannesburg",deliveryArea:"Pretoria",events:[],createdAt:new Date().toISOString()});
+ const service=createOperationsService({store,enabled:true,policyVersion:"driver-approved-test",
+  verifyToken:async token=>({uid:token,email:token+"@test.invalid",email_verified:true,firebase:{sign_in_provider:"google.com"}}),
+  authorizeStaff:async token=>({uid:token,role:"dispatcher"}),
+  saveProof:async()=>({path:"delivery-proofs/"+hash("emulator-ops-customer")+"/ops-shipment/evidence.pdf",generation:"1"})
+ });
+ let key=0;
+ const request=(uid,path,body,idempotency)=>service.handle({method:body?"POST":"GET",path,body,headers:{authorization:"Bearer "+uid,"content-type":"application/json","idempotency-key":idempotency||"emulator-operation-"+(++key)}});
+ const offered=await request("dispatcher","/api/operations/jobs",{customerUid:"emulator-ops-customer",shipmentId:"ops-shipment",driverId,feeMinor:15000,feePolicyVersion:"driver-approved-test",dueAt:future});
+ assert.equal(offered.status,201,JSON.stringify(offered));const id=offered.body.job.id;
+ const accepted=await Promise.all([request(uid,"/api/driver/jobs/"+id+"/accept",{feePolicyVersion:"driver-approved-test"}),request(uid,"/api/driver/jobs/"+id+"/accept",{feePolicyVersion:"driver-approved-test"})]);
+ assert.deepEqual(accepted.map(r=>r.status).sort(),[201,409],JSON.stringify(accepted));
+ for(const status of ["collected","in_transit","out_for_delivery"])assert.equal((await request(uid,"/api/driver/jobs/"+id+"/status",{status,description:"Emulator verified progress"})).status,201);
+ assert.equal((await request(uid,"/api/driver/jobs/"+id+"/proof",{base64:Buffer.from("%PDF-test").toString("base64")})).status,201);
+ const completed=await Promise.all([request(uid,"/api/driver/jobs/"+id+"/status",{status:"delivered",description:"Verified handover"},"same-delivery-key"),request(uid,"/api/driver/jobs/"+id+"/status",{status:"delivered",description:"Verified handover"},"same-delivery-key")]);
+ assert.deepEqual(completed.map(r=>r.status),[201,201],JSON.stringify(completed));
+ assert.equal((await db.collection("dispatchDrivers/"+driverId+"/ledger").get()).size,1);
+ const day=new Date().toISOString().slice(0,10),metrics=(await db.doc("dispatchDrivers/"+driverId+"/metrics/"+day).get()).data();
+ assert.equal(metrics.accepted,1);assert.equal(metrics.completed,1);
+ await db.doc("dispatchDrivers/"+driverId).update({status:"suspended"});
+ assert.equal((await request(uid,"/api/driver/jobs/"+id)).status,403);
+});
+test("browser users cannot read or overwrite driver, KYC, operations, finance or message records",async()=>{
+ const client=env.authenticatedContext("emulator-ops-driver",{email:"driver@test.invalid",email_verified:true,role:"dispatcher",firebase:{sign_in_provider:"google.com"}}).firestore();
+ for(const path of ["dispatchDrivers/private","dispatchDriverApplications/private","dispatchJobs/private","dispatchJobs/private/messages/private","dispatchSettlements/private","dispatchQuoteQueue/private","dispatchShipmentQueue/private","dispatchPrivacyQueue/private","dispatchOperationsAudit/private"]){
+  await db.doc(path).set({private:true});
+  await assertFails(getDoc(doc(client,path)));
+  await assertFails(setDoc(doc(client,path),{status:"approved"}));
+ }
+});

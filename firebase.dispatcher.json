@@ -48,6 +48,20 @@
     ],
     "rewrites": [
       {
+        "source": "/api/driver/**",
+        "function": {
+          "functionId": "courierOperationsApi",
+          "region": "europe-west1"
+        }
+      },
+      {
+        "source": "/api/operations/**",
+        "function": {
+          "functionId": "courierOperationsApi",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "/webhooks/whatsapp",
         "function": {
           "functionId": "whatsappInbound",

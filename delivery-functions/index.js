@@ -22,3 +22,5 @@ export {dispatcherApi} from "./dispatcher-function.js";
 
 // Meta webhook validates raw body signatures before storing review-only drafts.
 export {whatsappInbound} from "./whatsapp-function.js";
+
+export {courierOperationsApi} from "./operations-function.js";

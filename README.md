@@ -1,12 +1,14 @@
-# Franks24 — Dispatch courier and logistics
+# Franks24 - Dispatch courier and logistics
 
 [![Deploy GitHub Pages](https://github.com/franks-24/dispatch/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/franks-24/dispatch/actions/workflows/deploy-pages.yml)
 [![Delivery client tests](https://github.com/franks-24/dispatch/actions/workflows/delivery-tests.yml/badge.svg)](https://github.com/franks-24/dispatch/actions/workflows/delivery-tests.yml)
 [![Identity and landing tests](https://github.com/franks-24/dispatch/actions/workflows/identity-tests.yml/badge.svg)](https://github.com/franks-24/dispatch/actions/workflows/identity-tests.yml)
 
-**Platform brand:** Franks24. **Service:** Dispatch — courier bookings, delivery operations and shipment tracking.
+**Platform brand:** Franks24. **Service:** Dispatch - courier bookings, delivery operations and shipment tracking.
 
-**Public domain:** https://dispatch.franks24.com/ · **Customer preview:** https://dispatch.franks24.com/deliveries/ · **Firebase project:** `dispatch-1491f` · **No Vercel**.
+**Public domain:** https://dispatch.franks24.com/ � **Customer preview:** https://dispatch.franks24.com/deliveries/ � **Firebase project:** `dispatch-1491f` � **No Vercel**.
+
+See the [current build and acceptance record](docs/build-acceptance-2026-10-31.md) for phase status, entry points, deployment commands and remaining integrations.
 
 ## Current capabilities and production status
 
@@ -16,7 +18,7 @@
 | Google identity | Firebase browser config injected during GitHub Pages publication; live human Google SSO **not yet verified** |
 | Customer delivery desk | `/deliveries/` has request forms, shipment history, tracking timeline, proof retrieval client; **disabled** |
 | Backend API | `delivery-functions/` provides Firebase HTTP function, Firestore transaction adapter, operator CLI, idempotency and proof protection in source; **not deployed** |
-| Driver and dispatcher workspaces | Planned; not yet implemented or authorized for public use |
+| Driver and dispatcher workspaces | Implemented in source: intake/vetting, offers, assignments, messages, progress/POD, optional GPS and external-settlement reconciliation; **not activated** |
 | Live pricing, bookings and payments | **Unavailable**. No fabricated quote, carrier confirmation, location or delivery event |
 | Delivery policies | Draft only; operator/legal/POPIA/privacy review required |
 | Hosting | GitHub Pages publishes static files; backend hosting and billing require separate approval |
@@ -44,6 +46,7 @@ npm run test:onboarding
 npm run test:config
 npm run test:identity:unit
 npm run test:deliveries
+npm run test:operations
 npx playwright install --with-deps chromium webkit
 npm run test:identity
 ```
@@ -61,7 +64,7 @@ To preview locally, run `python3 -m http.server 8080` and visit http://localhost
 
 **No production acceptance, booking, payment or SSO success is claimed by this repository.**
 
-## Internal Workspace Directory → Dispatcher
+## Internal Workspace Directory  Dispatcher
 
 Internal staff use [Dispatcher staff preview](https://dispatch.franks24.com/dispatcher/) rather than the public customer delivery desk. The staff sign-in is **closed by default**. Only a verified, active Google Workspace Directory user in the designated Dispatcher group may receive a server-approved `dispatcher` session. No employee is granted Dispatcher privileges solely by a matching email suffix, a self-selected role or a legacy recruitment account.
 

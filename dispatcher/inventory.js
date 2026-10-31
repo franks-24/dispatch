@@ -1,11 +1,12 @@
 // Franks24 mobile inventory capture. The camera is never used until staff taps Scan.
 // Only the trusted Dispatcher API persists records and generates tracking references.
 const $=id=>document.getElementById(id);
-let staff=null,epoch=0,items=[],stream=null,scanTimer=null,uploading=false,previewURL=null,saveRequestKey=null;
+let staff=null,epoch=0,items=[],stream=null,scanTimer=null,uploading=false,previewURL=null,saveRequestKey=null,pendingPhoto=null,scanRequest=0;
 const status=text=>{$("inventory-status").textContent=text;};
 const nextState={registered:"packed",packed:"dispatched",dispatched:"delivered"};
 const endpoint="/api/dispatcher/items";
 function stopScan(){
+ scanRequest++;
  if(scanTimer){clearTimeout(scanTimer);scanTimer=null;}
  if(stream){for(const track of stream.getTracks())track.stop();stream=null;}
  const video=$("barcode-video");
@@ -57,7 +58,7 @@ function recommend(){
  for(const item of matches){
   const button=document.createElement("button");button.type="button";
   button.className="product-suggestion";
-  button.textContent=item.name+" · "+(item.sku||item.barcode||"Previous item");
+  button.textContent=item.name+" � "+(item.sku||item.barcode||"Previous item");
   button.addEventListener("click",()=>{
    $("item-name").value=item.name;
    $("item-sku").value=item.sku||"";
@@ -81,10 +82,10 @@ function render(){
  }
  for(const item of shown){
   const article=document.createElement("article");article.className="inventory-record";
-  const heading=document.createElement("strong");heading.textContent=item.name+" · "+item.tracking;
+  const heading=document.createElement("strong");heading.textContent=item.name+" � "+item.tracking;
   const details=document.createElement("p");
-  details.textContent="SKU: "+(item.sku||"—")+" · Barcode: "+(item.barcode||"—")+
-   " · Qty: "+item.quantity+" · "+item.status;
+  details.textContent="SKU: "+(item.sku||"-")+" � Barcode: "+(item.barcode||"-")+
+   " � Qty: "+item.quantity+" � "+item.status;
   article.append(heading,details);
   const actions=document.createElement("div");actions.className="inventory-row-actions";
   const next=nextState[item.status];
@@ -160,7 +161,7 @@ export function setInventorySession(identity){
  $("inventory-panel").hidden=!identity;
  $("inventory-list").replaceChildren();
  if(!identity){
-  $("inventory-form").reset();saveRequestKey=null;photoPreview();status("Sign in as approved Dispatcher staff.");
+  $("inventory-form").reset();saveRequestKey=null;pendingPhoto=null;photoPreview();status("Sign in as approved Dispatcher staff.");
   return;
  }
  refresh(identity,epoch);
@@ -176,21 +177,26 @@ $("scan-barcode").addEventListener("click",async()=>{
   status("Live barcode scanning is unavailable on this browser. Enter the code manually or take an item photo.");
   $("item-barcode").focus();return;
  }
+ const version=epoch,attempt=++scanRequest;
  try{
   const formats=await BarcodeDetector.getSupportedFormats();
+  if(version!==epoch||attempt!==scanRequest||!staff)return;
   const usable=["code_128","code_39","ean_13","ean_8","upc_a","upc_e","qr_code","itf"].filter(v=>formats.includes(v));
   if(!usable.length)throw Error("No supported barcode formats.");
   const detector=new BarcodeDetector({formats:usable});
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}}});
+  const acquired=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}}});
+  if(version!==epoch||attempt!==scanRequest||!staff){for(const track of acquired.getTracks())track.stop();return;}
+  stream=acquired;
   const video=$("barcode-video");
   video.hidden=false;video.srcObject=stream;await video.play();
+  if(version!==epoch||attempt!==scanRequest||!staff){if(stream===acquired)stopScan();return;}
   $("scan-barcode").textContent="Stop scanning";
   status("Point the camera at the barcode.");
-  const version=epoch;
   const scan=async()=>{
    if(!stream||version!==epoch)return;
    try{
     const results=await detector.detect(video);
+    if(version!==epoch||attempt!==scanRequest||!staff)return;
     if(results.length&&results[0].rawValue){
      $("item-barcode").value=results[0].rawValue.trim().slice(0,100);
      stopScan();status("Barcode captured. Confirm the item name, SKU and quantity.");
@@ -200,38 +206,54 @@ $("scan-barcode").addEventListener("click",async()=>{
    scanTimer=setTimeout(scan,260);
   };
   scan();
- }catch(error){stopScan();status("Camera unavailable. Enter the barcode manually or take a photo.");}
+ }catch(error){if(version===epoch&&attempt===scanRequest){stopScan();status("Camera unavailable. Enter the barcode manually or take a photo.");}}
 });
 $("inventory-form").addEventListener("submit",async event=>{
  event.preventDefault();
  if(!staff||uploading)return;
- const form=event.currentTarget;
+ const form=event.currentTarget,identity=staff,version=epoch;
  const payload={
   name:$("item-name").value.trim(),sku:$("item-sku").value.trim(),
   barcode:$("item-barcode").value.trim(),
   quantity:Number($("item-quantity").value),notes:$("item-notes").value.trim()
  };
- if(!payload.name||!Number.isInteger(payload.quantity)||payload.quantity<1){
+ if(!pendingPhoto&&(!payload.name||!Number.isInteger(payload.quantity)||payload.quantity<1)){
   status("Item name and a positive whole-number quantity are required.");return;
  }
- const image=$("item-photo").files?.[0],version=epoch;
  uploading=true;$("inventory-save").disabled=true;
  try{
-  saveRequestKey ||= (crypto.randomUUID?crypto.randomUUID().replaceAll("-","")+"inventory":"inventory"+Date.now().toString(36)+Math.random().toString(36).slice(2,15));
-  const result=await request(endpoint,"POST",payload,staff,{"Idempotency-Key":saveRequestKey});
-  if(version!==epoch)return;
-  const tracking=result.item.tracking;
-  status("Item recorded: "+tracking+(image?". Uploading private photo…":""));
-  if(image){
+  let tracking=pendingPhoto?.tracking;
+  if(!pendingPhoto){
+   saveRequestKey ||= crypto.randomUUID().replaceAll("-","")+"inventory";
+   const result=await request(endpoint,"POST",payload,identity,{"Idempotency-Key":saveRequestKey});
+   if(version!==epoch)return;
+   tracking=result.item.tracking;
+   const image=$("item-photo").files?.[0];
+   if(image)pendingPhoto={tracking,file:image};
+  }
+  if(pendingPhoto){
+   status("Item recorded: "+tracking+". Uploading private photo.");
    try{
-    const photo=await photoPayload(image);
-    await request(endpoint+"/"+encodeURIComponent(tracking)+"/photo","POST",photo);
-    status("Item and photo recorded: "+tracking+".");
-   }catch(error){status("Item "+tracking+" saved, but photo was not attached: "+error.message);}
+    // A retry always targets the already saved tracking reference.
+    const photo=await photoPayload(pendingPhoto.file);
+    if(version!==epoch)return;
+    await request(endpoint+"/"+encodeURIComponent(tracking)+"/photo","POST",photo,identity);
+   }catch(error){
+    if(version!==epoch)return;
+    // The server may have committed an upload whose response was lost.
+    await refresh(identity,version);
+    if(!items.some(item=>item.tracking===tracking&&item.photoAvailable)){
+     $("inventory-save").textContent="Retry photo for "+tracking;
+     status("Item "+tracking+" is saved. Photo not attached: "+error.message+". Tap Retry photo; this will not create another item.");
+     return;
+    }
+   }
   }
   if(version!==epoch)return;
-  form.reset();saveRequestKey=null;photoPreview();recommend();await refresh();
-  status("Saved inventory item "+tracking+". "+(image?"Check photo status in the list.":""));
+  pendingPhoto=null;form.reset();saveRequestKey=null;photoPreview();recommend();await refresh(identity,version);
+  if(version!==epoch)return;
+  $("inventory-save").textContent="Save inventory item";
+  status("Saved inventory item "+tracking+".");
  }catch(error){if(version===epoch)status(error.message);}
  finally{uploading=false;$("inventory-save").disabled=false;}
 });

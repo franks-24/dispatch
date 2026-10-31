@@ -25,7 +25,8 @@ export function validateCaptureInput(body){
  let image=null;
  if(body.image!==undefined){
   if(!body.image||typeof body.image!=="object"||body.image.mime!=="image/jpeg"||
-   typeof body.image.base64!=="string"||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.image.base64))
+   typeof body.image.base64!=="string"||body.image.base64.length>Math.ceil(MAX_IMAGE*4/3)||
+   body.image.base64.length%4!==0||/[^A-Za-z0-9+/=]/.test(body.image.base64))
    fail(400,"AI accepts a JPEG image.");
   const bytes=Buffer.from(body.image.base64,"base64");
   if(bytes.length===0||bytes.length>MAX_IMAGE||
