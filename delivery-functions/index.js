@@ -16,3 +16,6 @@ export const deliveriesApi=onRequest({region:"europe-west1",cors:false,maxInstan
     res.set(response.headers);return Buffer.isBuffer(response.body)?res.status(response.status).send(response.body):res.status(response.status).json(response.body);
   }catch{return res.status(503).json({error:"Delivery service unavailable."});}
 });
+
+// Staff API: same-origin Hosting rewrite; no browser-side privileged credentials.
+export {dispatcherApi} from "./dispatcher-function.js";
