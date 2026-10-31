@@ -24,7 +24,10 @@ function showPanel(group, id, {focus = false, updateHash = false} = {}) {
     const active = button === selected;
     button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1;
     const panel = document.getElementById(button.dataset.f24Tab);
-    if (panel) panel.hidden = !active;
+    if (panel) {
+      if (!active && !panel.hidden) document.dispatchEvent(new CustomEvent('franks24:panel-deactivate', {detail:{id:panel.id}}));
+      panel.hidden = !active;
+    }
   }
   group.dataset.selectedPanel = id;
   if (focus) selected.focus();
