@@ -28,18 +28,22 @@ jobs:
           FIREBASE_WEB_CONFIG_JSON: ${{ vars.FIREBASE_WEB_CONFIG_JSON }}
         run: node tools/write-firebase-config.mjs
       - name: Validate customer preview, Firebase config and delivery client
-        run: npm run test:onboarding && npm run test:config && npm run test:deliveries && npm run test:dispatcher && npm run test:release
+        run: npm run test:onboarding && npm run test:config && npm run test:deliveries && npm run test:dispatcher && npm run test:release && npm run test:operations
       - name: Stage public static content only
         run: |
           mkdir -p public
           cp index.html CNAME .nojekyll public/
-          cp -R assets deliveries legal dispatcher public/
+          cp -R assets deliveries legal dispatcher driver operations workspaces public/
       - name: Stamp published commit in the static site artifact
         run: node tools/write-release-manifest.mjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Require a single GitHub Actions Pages publisher
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/verify-pages-publisher.mjs
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
@@ -47,3 +51,4 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+

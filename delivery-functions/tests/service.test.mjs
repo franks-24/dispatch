@@ -28,3 +28,15 @@ test("private proof paths and PDF bytes are validated",async()=>{const f=fixture
 test("operator transitions reject invented confirmation and direct jumps to delivered",async()=>{const f=fixture();const path=`${customerPath("alice")}/shipments/test`;f.store.data.set(path,{id:"test",status:"requested",events:[]});await assert.rejects(f.operator.advance("alice","test",{status:"delivered",description:"Delivery",operator:"operator"}),/transition/);await assert.rejects(f.operator.advance("alice","test",{status:"confirmed",description:"Confirmed",operator:"operator"}),/carrier/);await f.operator.advance("alice","test",{status:"confirmed",description:"Carrier booking confirmed",carrierReference:"REAL-CARRIER-REF",operator:"operator"});assert.equal((await f.store.get(path)).status,"confirmed");});
 test("persistent rate limit spans service instances and body limits fail closed",async()=>{const f=fixture();const a=createService({...f.options,maxPerMinute:1}),b=createService({...f.options,maxPerMinute:1});const request={method:"GET",path:"/api/deliveries/quotes",headers:{authorization:"Bearer alice"}};assert.equal((await a.handle(request)).status,200);assert.equal((await b.handle(request)).status,429);const oversized=await f.call("POST","/quotes",{...quoteBody,pickupArea:"x".repeat(17000)});assert.equal(oversized.status,413);});
 test("customer UIDs cannot inject Firestore paths and unexpected failures are redacted",async()=>{assert.match(customerPath("a/quotes/b"),/^deliveryCustomers\/[a-f0-9]{64}$/);const f=fixture();const api=createService({...f.options,store:{transaction:async()=>{throw new Error("sensitive internal address");}}});const response=await api.handle({method:"GET",path:"/api/deliveries/quotes",headers:{authorization:"Bearer alice"}});assert.equal(response.status,503);assert.equal(response.body.error,"Delivery service unavailable.");});
+
+test("customer profile is scoped and privacy requests do not demand fresh policy acceptance",async()=>{
+ const f=fixture();
+ const profile=await f.call("POST","/profile",{displayName:"Fixture customer",phone:"+27110000000",acceptance},"alice","profile-request-key");
+ assert.equal(profile.status,201);
+ assert.equal((await f.call("GET","/profile",undefined,"bob")).body.profile,null);
+ assert.equal((await f.call("GET","/profile")).body.profile.displayName,"Fixture customer");
+ const request=await f.call("POST","/privacy-requests",{type:"erasure",details:"Please review my data retention."},"alice","privacy-request-key");
+ assert.equal(request.status,201);assert.equal(request.body.request.status,"received_for_review");
+ assert.equal((await f.store.list("dispatchPrivacyQueue",{limit:10})).items.length,1);
+ assert.equal([...f.store.data.keys()].filter(path=>path.includes("/agreements/")).length,1);
+});

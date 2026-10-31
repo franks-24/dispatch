@@ -77,7 +77,7 @@ function createRuntime(){
   const col=db.collection("dispatchWhatsAppDrafts"),audit=db.collection("dispatchInventoryAudit");
   const store={
    list:async limit=>{
-    const snapshot=await col.orderBy("receivedAt","desc").limit(limit).get();
+    const snapshot=await col.where("status","==","needs_review").orderBy("receivedAt","desc").limit(limit).get();
     return snapshot.docs.map(doc=>doc.data());
    },
    review:async(id,status,actor)=>db.runTransaction(async tx=>{
