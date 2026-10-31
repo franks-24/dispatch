@@ -7,7 +7,20 @@ class PilotApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Franks24 · Dispatch pilot',
-    theme: ThemeData(colorSchemeSeed: const Color(0xffdc2626), useMaterial3: true),
+    theme: ThemeData(
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xffc8102e),
+        primary: const Color(0xffc8102e), onPrimary: Colors.white,
+        surface: Colors.white),
+      scaffoldBackgroundColor: const Color(0xfff7f7f8),
+      appBarTheme: const AppBarTheme(backgroundColor: Color(0xffc8102e),
+        foregroundColor: Colors.white, surfaceTintColor: Colors.transparent,
+        centerTitle: false, toolbarHeight: 80),
+      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
+        minimumSize: const Size(double.infinity, 52),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.white, indicatorColor: const Color(0xffffe5e9)),
+      useMaterial3: true),
     home: const PilotHome());
 }
 class PilotHome extends StatefulWidget {
