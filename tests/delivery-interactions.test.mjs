@@ -50,9 +50,11 @@ test("closed preview allows typing and selections, while clicks explain why no r
  assert.match(f.element("tracking-form").querySelector(".form-message").textContent,/not open yet/);
  assert.deepEqual(f.calls,[]);
 });
-test("unavailable Google sign-in gives feedback instead of silently ignoring a click",async()=>{
- const f=await browser();await f.element("login").listeners.click();
- assert.match(f.element("message").textContent,/currently unavailable/);assert.equal(f.element("message").focused,true);
+test("public preview disables Google sign-in without loading identity",async()=>{
+ const f=await browser();
+ assert.equal(f.element("login").disabled,true);
+ assert.match(f.element("login").textContent,/Sign-in paused/);
+ assert.match(f.element("identity").textContent,/not submitted/);
  assert.deepEqual(f.calls,[]);
 });
 test("an active service still requires sign-in, with an explanation beside the form",async()=>{
@@ -60,7 +62,7 @@ test("an active service still requires sign-in, with an explanation beside the f
  await f.submit("quote-form");assert.match(f.element("quote-form").querySelector(".form-message").textContent,/Sign in with Google/);assert.deepEqual(f.calls,[]);
 });
 test("initial auth resolution and first sign-in preserve a draft; sign-out clears private forms",async()=>{
- const f=await browser({configured:true});
+ const f=await browser({configured:true,enabled:true,policiesApproved:true});
  f.element("booking-form").data={pickupAddress:"1 Test Street"};
  await f.session(null);assert.equal(f.element("booking-form").resets,0);
  await f.session(customer);assert.equal(f.element("booking-form").resets,0);assert.equal(f.element("booking-form").data.pickupAddress,"1 Test Street");
