@@ -90,11 +90,13 @@ $("readiness-form").addEventListener("submit",event=>{
 });
 window.addEventListener("pagehide",()=>{controller.abort();});
 async function start(){
+ $("applicant-login").textContent="Access paused — staging only";
  if(!applicantConfig.enabled||!applicantConfig.policyVersion||
     applicantConfig.policyVersion.toLowerCase().includes("draft")){
   note("Applications are not yet open. Approved policies and the secure Firebase application API are required. No application data is collected here.");
   return;
  }
+ $("applicant-login").textContent="Continue with Google";
  if(firebaseConfig?.projectId!=="dispatch-1491f"||!firebaseConfig.apiKey){
   note("The approved Google sign-in configuration is not available.");return;
  }

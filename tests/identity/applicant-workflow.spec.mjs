@@ -2,7 +2,7 @@ import {test,expect} from "@playwright/test";
 
 test("public Pages applicant preview never collects information before approval",async({page})=>{
  await page.goto("/driver/apply.html");
- await expect(page.getByRole("button",{name:"Continue with Google"})).toBeDisabled();
+ await expect(page.getByRole("button",{name:"Access paused — staging only"})).toBeDisabled();
  await expect(page.locator("#application-panel")).toBeHidden();
  await expect(page.locator("#applicant-status")).toContainText("Applications are not yet open");
  await expect(page.getByRole("link",{name:"Review launch status and policy drafts"})).toHaveAttribute("href","../deliveries/policies.html");

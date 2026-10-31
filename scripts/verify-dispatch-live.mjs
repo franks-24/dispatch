@@ -60,6 +60,27 @@ if(process.env.VERIFY_PUBLISHED_SOURCE==="true"){
  await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
  assert.ok(matched,"Expected release revision and Firebase web config have not reached the custom domain.");
  report.liveLandingIsCourier=true;
+ // Verify that the post-deployment HTML, JavaScript and public config
+ // preserve the explicit security pause. Static 200/CI is not Safe Browsing clearance.
+ const nonce="?verify="+Date.now();
+ const [dispatcherHtmlReply,dispatcherJsReply,dispatcherConfigReply]=await Promise.all([
+  fetch(origin+"/dispatcher/"+nonce,{cache:"no-store",signal:AbortSignal.timeout(15000)}),
+  fetch(origin+"/dispatcher/app.js"+nonce,{cache:"no-store",signal:AbortSignal.timeout(15000)}),
+  fetch(origin+"/dispatcher/config.js"+nonce,{cache:"no-store",signal:AbortSignal.timeout(15000)})
+ ]);
+ const [dispatcherHtml,dispatcherJs,dispatcherConfig]=await Promise.all([
+  dispatcherHtmlReply.ok?dispatcherHtmlReply.text():Promise.resolve(""),
+  dispatcherJsReply.ok?dispatcherJsReply.text():Promise.resolve(""),
+  dispatcherConfigReply.ok?dispatcherConfigReply.text():Promise.resolve("")
+ ]);
+ report.publishedDispatcherSecurityGate=
+  dispatcherHtml.includes("Access paused — security review") &&
+  dispatcherJs.includes('const pausedLabel="Access paused — security review"') &&
+  dispatcherJs.includes("login.textContent=closedLabel();") &&
+  /enabled:\s*false/.test(dispatcherConfig);
+ await writeFile("dispatch-live-verification.json",JSON.stringify(report,null,2)+"\n");
+ assert.ok(report.publishedDispatcherSecurityGate,
+  "Published Dispatcher security-pause UI or client config no longer matches the protected release.");
 }
 // This is the same read-only project lookup used by the Firebase Web SDK to validate origins.
 const authResponse=await fetch("https://identitytoolkit.googleapis.com/v1/projects?key="+encodeURIComponent(expectedConfig.apiKey),{signal:AbortSignal.timeout(15000)});

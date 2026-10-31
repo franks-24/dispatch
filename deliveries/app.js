@@ -29,8 +29,22 @@ function requireReady(form) {
 function syncControls() {
   // Capturing a draft is local. Authentication and launch gates apply when sending it.
   for (const id of ["quote-fields","booking-fields","tracking-fields","acceptance-fields","profile-fields","privacy-fields","refresh"]) $(id).disabled = false;
+  const active = config.enabled && config.policiesApproved;
   $("login").hidden = Boolean(user); $("logout").hidden = !user;
-  $("identity").textContent = user ? `Signed in as ${user.email || "Google user"}.` : "Sign in to access your quotes and private shipment history.";
+  $("login").disabled = !active || authStatus !== "ready";
+  $("login").textContent = active ? "Continue with Google" : "Sign-in paused — preview only";
+  $("identity").textContent = !active ? "Sign-in is paused while Dispatch remains in preview. Details entered here are not submitted." : user ? `Signed in as ${user.email || "Google user"}.` : "Sign in to access your quotes and private shipment history.";
+  // Preview forms check input locally but never imply successful submission.
+  for (const [id,preview,live] of [
+    ["quote-form","Review quote details · preview","Request a quote ↗"],
+    ["booking-form","Review booking details · preview","Request collection ↗"],
+    ["tracking-form","Review tracking reference · preview","Track delivery →"],
+    ["profile-form","Review contact details · preview","Save customer details"],
+    ["privacy-form","Review privacy request · preview","Submit privacy request for review"]
+  ]) {
+    const submit=$(id).querySelector('button[type="submit"]');
+    if(submit)submit.textContent=active?live:preview;
+  }
   $("availability").textContent = !config.enabled || !config.policiesApproved ? "Preview — delivery requests are not open yet. You can enter and review details. No bookings or payments are accepted, and entries are not saved after leaving this page." : "Enter your details, then sign in to send a request. Collection is subject to booking confirmation and route availability.";
 }
 function clearPrivate() {
@@ -130,7 +144,9 @@ $("login").addEventListener("click",async()=>{if(!auth||!sdk){message(authStatus
 $("logout").addEventListener("click",async()=>{try{await sdk.signOut(auth);}catch{message("Sign-out could not complete. Please try again.");}});
 async function initialize() {
   syncControls();
-  if(!firebaseConfig?.apiKey||!firebaseConfig?.authDomain||!firebaseConfig?.projectId||!firebaseConfig?.appId){authStatus="unavailable";message("Google sign-in is not configured yet. You can prepare delivery details, but delivery requests remain closed.");return;}
+  // Public preview has no sign-in or remote data capture; do not load Firebase.
+  if(!config.enabled || !config.policiesApproved){authStatus="closed";syncControls();return;}
+  if(!firebaseConfig?.apiKey||!firebaseConfig?.authDomain||!firebaseConfig?.projectId||!firebaseConfig?.appId){authStatus="unavailable";syncControls();message("Google sign-in is not configured yet. You can prepare delivery details, but delivery requests remain closed.");return;}
   try{
     const [app,authSdk]=await Promise.all([import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js")]);
     sdk=authSdk;auth=sdk.getAuth(app.initializeApp(firebaseConfig,"franks24-deliveries"));
@@ -155,8 +171,8 @@ async function initialize() {
       }
       if(ready())refresh();
     });
-    authStatus="ready";$("login").disabled=false;
-  }catch{authStatus="unavailable";$("login").disabled=false;message("Google sign-in is temporarily unavailable. You can still prepare your delivery details on this page.");}
+    authStatus="ready";syncControls();
+  }catch{authStatus="unavailable";syncControls();message("Google sign-in is temporarily unavailable. You can still prepare your delivery details on this page.");}
 }
 initialize();
 
