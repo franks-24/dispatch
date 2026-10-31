@@ -1,3 +1,4 @@
+import {setWhatsAppSession} from "./whatsapp.js";
 import {setInventorySession} from "./inventory.js";
 import {firebaseConfig} from "../assets/config.js";
 import {dispatcherConfig} from "./config.js";
@@ -8,6 +9,7 @@ const login=$("staff-login");
 const note=text=>{$("staff-status").textContent=text;};
 const close=()=>{
  setInventorySession(null);
+ setWhatsAppSession(null);
  $("staff-workspace").hidden=true;
  $("staff-logout").hidden=true;
  $("staff-account").textContent="";
@@ -37,6 +39,7 @@ async function authorize(user){
   if(result.role!=="dispatcher"||result.workspace!=="dispatcher")throw Error("Dispatcher access was not verified.");
   $("staff-workspace").hidden=false;
   setInventorySession(user);
+  setWhatsAppSession(user);
   $("staff-logout").hidden=false;
   $("staff-account").textContent=user.email||"Verified staff account";
   login.textContent="Switch Google account";
