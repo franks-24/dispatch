@@ -1,5 +1,4 @@
 import {onRequest} from "firebase-functions/v2/https";
-import {defineSecret} from "firebase-functions/params";
 import {getAuth} from "firebase-admin/auth";
 import {randomUUID} from "node:crypto";
 import {createRuntime} from "./runtime.js";
@@ -8,7 +7,6 @@ import {createWorkspaceDirectory} from "./dispatcher-directory.js";
 import {createOperationsService} from "./operations-service.js";
 import {hash} from "./service.js";
 
-const directorySecret=defineSecret("DISPATCH_DIRECTORY_SA_JSON");
 let pending;
 async function initialize(){
  const env=process.env;
@@ -16,7 +14,7 @@ async function initialize(){
   !env.DISPATCH_WORKSPACE_CUSTOMER_ID||!env.DISPATCH_GROUP_EMAIL||!env.DISPATCH_DELEGATED_ADMIN_EMAIL)
   throw Error("Workspace authorization is not configured.");
  const runtime=await createRuntime(env);
- const directory=createWorkspaceDirectory({credentialsJson:directorySecret.value(),delegatedAdminEmail:env.DISPATCH_DELEGATED_ADMIN_EMAIL});
+ const directory=createWorkspaceDirectory({delegatedAdminEmail:env.DISPATCH_DELEGATED_ADMIN_EMAIL});
  const authorizer=createDispatcherAuthorizer({
   verifyToken:runtime.verifyToken,lookupDirectoryUser:directory.lookupDirectoryUser,
   checkGroupMembership:directory.checkGroupMembership,workspaceCustomerId:env.DISPATCH_WORKSPACE_CUSTOMER_ID,
@@ -40,7 +38,7 @@ async function initialize(){
  });
 }
 export const courierOperationsApi=onRequest({
- region:"europe-west1",cors:false,maxInstances:2,concurrency:10,timeoutSeconds:40,memory:"512MiB",secrets:[directorySecret]
+ region:"europe-west1",cors:false,maxInstances:2,concurrency:10,timeoutSeconds:40,memory:"512MiB"
 },async(req,res)=>{
  res.set({"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"});
  if(process.env.DISPATCH_OPERATIONS_ENABLED!=="true")
