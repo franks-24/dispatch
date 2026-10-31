@@ -6,7 +6,7 @@ import {DispatcherAccessError} from "../dispatcher-auth.js";
 function fixture({allowed=true}={}){
  const rows=new Map(),events=[];
  const store={
-  create:async(item,actor)=>{if(rows.has(item.tracking))throw Error("duplicate");rows.set(item.tracking,item);events.push({action:"create",actor});},
+  create:async(item,actor)=>{if(rows.has(item.tracking))throw Error("duplicate");rows.set(item.tracking,item);events.push({action:"create",actor});return item;},
   list:async()=>[...rows.values()].map(({createdBy,photo,...row})=>row),
   get:async id=>rows.get(id)||null,
   advance:async(id,status,steps,actor,at)=>{
@@ -28,7 +28,7 @@ function fixture({allowed=true}={}){
   savePhoto:async()=>({path:"inventory/"+tracking+"/test",generation:"1",mime:"image/jpeg"}),
   readPhoto:async()=>({bytes:Buffer.from([0xff,0xd8,0xff,0xd9]),mime:"image/jpeg"})
  });
- const request=(method,path,body,auth=true)=>service.handle({method,path,body,headers:auth?{authorization:"Bearer test"}:{}});
+ const request=(method,path,body,auth=true)=>service.handle({method,path,body,headers:auth?{authorization:"Bearer test",...(method==="POST"&&path==="/api/dispatcher/items"?{"idempotency-key":"test-capture-request-1234567890"}:{})}:{}});
  return {service,request,tracking,checks:()=>checks,rows,events};
 }
 test("inventory remains disabled by default even with a valid mock authorizer",async()=>{
