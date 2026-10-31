@@ -8,7 +8,7 @@ const run=(command,args,{capture=false}={})=>{
  if(result.status!==0)throw Error("Command failed: "+command+" "+args.slice(0,3).join(" ")+(capture?". Authenticate and inspect the command in your trusted shell.":""));
  return capture?result.stdout:"";
 };
-run(process.execPath,["--test","delivery-functions/tests/service.test.mjs","delivery-functions/tests/operations.test.mjs","tests/capture-regressions.test.mjs","tests/operations-ui.test.mjs"]);
+run(process.execPath,["--test","delivery-functions/tests/service.test.mjs","delivery-functions/tests/operations.test.mjs","delivery-functions/tests/dispatcher-directory.test.mjs","tests/capture-regressions.test.mjs","tests/operations-ui.test.mjs"]);
 if(!process.argv.includes("--deploy")){
  run(process.execPath,["tools/build-firebase-dispatcher.mjs"]);
  console.log("Closed staging artifact prepared. No cloud resources, billing, credentials or domains changed.");
@@ -29,7 +29,17 @@ firebase(["projects:list","--json"],{capture:true});
 const metadata=JSON.parse(firebase(["firestore:databases:get",env.DELIVERY_DATABASE_ID,"--json"],{capture:true}));
 const database=metadata.result||metadata;
 if(database.databaseEdition!=="STANDARD"||database.type!=="FIRESTORE_NATIVE")throw Error("Selected database is not verified Standard/native.");
-firebase(["functions:secrets:get","DISPATCH_DIRECTORY_SA_JSON","--json"],{capture:true});
+// Keyless Directory authentication: verify the delegated signer is present.
+// Its runtime caller must be explicitly granted IAM signJwt on this service
+// account; deployment does not grant broad permissions or override org policy.
+const directorySa="franks24-directory@dispatch-1491f.iam.gserviceaccount.com";
+const found=run("gcloud",["iam","service-accounts","describe",directorySa,
+ "--project=dispatch-1491f","--format=value(email)"],{capture:true}).trim();
+if(found!==directorySa)throw Error("The delegated Directory signer is missing.");
+const enabled=run("gcloud",["services","list","--enabled",
+ "--project=dispatch-1491f","--format=value(config.name)"],{capture:true});
+if(!enabled.split(/\r?\n/).includes("iamcredentials.googleapis.com"))
+ throw Error("Enable iamcredentials.googleapis.com before deploying.");
 const settings={...Object.fromEntries(names.filter(n=>n!=="DISPATCH_STAGING_SITE").map(n=>[n,env[n]])),
  DELIVERY_ENABLED:"true",DISPATCH_SESSION_ENABLED:"true",DISPATCH_INVENTORY_ENABLED:"true",DISPATCH_OPERATIONS_ENABLED:"true",
  DISPATCH_APPLICANTS_ENABLED:"true",DISPATCH_POLICIES_APPROVED:"true",
