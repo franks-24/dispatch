@@ -1,0 +1,38 @@
+name: Android local pilot
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/android-pilot.yml']
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Generate Android shell
+        working-directory: mobile
+        run: flutter create --platforms=android --org com.franks24 --project-name franks24_mobile .
+      - run: flutter pub get
+        working-directory: mobile
+      - run: dart format lib test
+        working-directory: mobile
+      - run: flutter analyze
+        working-directory: mobile
+      - run: flutter test
+        working-directory: mobile
+      - run: flutter build apk --debug
+        working-directory: mobile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: franks24-local-demo-debug-apk
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk

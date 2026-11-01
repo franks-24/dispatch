@@ -1,0 +1,33 @@
+name: iOS local pilot
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/ios-pilot.yml']
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Generate iOS shell
+        working-directory: mobile
+        run: flutter create --platforms=ios --org com.franks24 --project-name franks24_mobile .
+      - run: flutter pub get
+        working-directory: mobile
+      - run: flutter analyze
+        working-directory: mobile
+      - run: flutter test
+        working-directory: mobile
+      - name: Build simulator app (not installable on physical iPhones)
+        working-directory: mobile
+        run: flutter build ios --simulator --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: franks24-ios-simulator-only
+          path: mobile/build/ios/iphonesimulator/Runner.app
