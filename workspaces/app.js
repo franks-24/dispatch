@@ -117,13 +117,17 @@ async function load(){
      field(f,"Verified Google driver account reference","driverUid");
      field(f,"A professional driving permit is legally required","prdpRequired",{type:"checkbox",required:false});
      field(f,"No unresolved hold; evidence and agreement independently checked","clearHold",{type:"checkbox"});
+     const reviewGrid=el("div",undefined,"review-checks");f.append(reviewGrid);
+     const labels={eligibility:"Eligibility",identity:"Identity and profile photo",rightToWork:"Right to work",contact:"Verified contact",licence:"Vehicle licence",prdp:"PrDP applicability",vehicle:"Vehicle permission and safety",insurance:"Courier insurance",riskReview:"Safety screening and human risk review",beneficiary:"Payout beneficiary",agreement:"Signed courier agreement and private archive",safety:"Safe delivery induction"};
      for(const criterion of ["eligibility","identity","rightToWork","contact","licence","prdp","vehicle","insurance","riskReview","beneficiary","agreement","safety"]){
-      const group=el("fieldset");group.append(el("legend",criterion));
+      const section=el("details"),heading=el("summary",labels[criterion]);section.append(heading);
+      const group=el("fieldset");group.append(el("legend",labels[criterion]));
       field(group,"Decision",criterion+"Result",{options:[["","Select a decision"],["verified","Verified"],["not_applicable","Not applicable where permitted"]]});
       field(group,"Private evidence reference",criterion+"Evidence");
       if(["licence","prdp","vehicle","insurance","beneficiary"].includes(criterion))field(group,"Evidence expiry",criterion+"Expiry",{type:"datetime-local",required:false});
-      f.append(group);
+      section.append(group);reviewGrid.append(section);
      }
+     f.addEventListener("invalid",event=>{const section=event.target.closest("details");if(section)section.open=true;},true);
     },"Approve reviewed driver",async(_,f)=>{
      const checks={};for(const criterion of ["eligibility","identity","rightToWork","contact","licence","prdp","vehicle","insurance","riskReview","beneficiary","agreement","safety"]){
       checks[criterion]={result:f.get(criterion+"Result"),evidenceRef:f.get(criterion+"Evidence")};

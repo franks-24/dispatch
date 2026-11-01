@@ -1,0 +1,37 @@
+import {test,expect} from '@playwright/test';
+test('readiness saves only allowlisted preparation metadata after opt in and clears it',async({page})=>{
+ await page.goto('/driver/apply.html');
+ await page.getByRole('radio',{name:/Bicycle/}).check();
+ expect(await page.evaluate(()=>localStorage.getItem('franks24:courier-readiness:v1'))).toBeNull();
+ await page.getByRole('checkbox',{name:/Remember this checklist/}).check();
+ await page.reload();
+ await expect(page.getByRole('radio',{name:/Bicycle/})).toBeChecked();
+ const data=await page.evaluate(()=>JSON.parse(localStorage.getItem('franks24:courier-readiness:v1')));
+ expect(Object.keys(data).sort()).toEqual(['checks','vehicle']);
+ await page.getByRole('button',{name:'Clear progress'}).click();
+ await expect(page.getByRole('radio',{name:/Bicycle/})).not.toBeChecked();
+ expect(await page.evaluate(()=>localStorage.getItem('franks24:courier-readiness:v1'))).toBeNull();
+});
+test('vehicle change resets preparation checks and never opens applicant collection',async({page})=>{
+ let apiRequests=0;page.on('request',r=>{if(r.url().includes('/api/'))apiRequests++;});
+ await page.goto('/driver/apply.html');
+ const form=page.locator('#readiness-form');
+ await form.getByRole('button',{name:'Continue',exact:true}).click();
+ await expect(form.locator('[data-step]').first()).toBeVisible();
+ await page.getByRole('radio',{name:/Bicycle/}).check();
+ await expect(page.locator('#vehicle-guidance')).toContainText('motor driving licence is not required');
+ await form.getByRole('button',{name:'Continue',exact:true}).click();
+ await form.getByRole('button',{name:'Continue',exact:true}).click();
+ await page.getByRole('checkbox',{name:/motor driving licence and PrDP checks/}).check();
+ await page.getByRole('checkbox',{name:/vehicle permission/}).check();
+ await form.getByRole('button',{name:'Back',exact:true}).click();
+ await form.getByRole('button',{name:'Back',exact:true}).click();
+ await page.getByRole('radio',{name:/Van/}).check();
+ await form.getByRole('button',{name:'Continue',exact:true}).click();
+ await form.getByRole('button',{name:'Continue',exact:true}).click();
+ await expect(page.getByRole('checkbox',{name:/valid licence and permit/})).not.toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/vehicle permission/})).not.toBeChecked();
+ await expect(page.locator('#licence-guidance')).toContainText('gross vehicle mass');
+ await expect(page.locator('#application-panel')).toBeHidden();expect(apiRequests).toBe(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

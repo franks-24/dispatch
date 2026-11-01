@@ -1,10 +1,10 @@
 name: Onboarding and legal UI validation
 on:
   pull_request:
-    paths: ['index.html', 'assets/**', 'dispatcher/**', 'legal/**', 'tests/dispatcher.test.mjs', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
+    paths: ['index.html', 'assets/**', 'driver/**', 'workspaces/**', 'dispatcher/**', 'legal/**', 'tests/dispatcher.test.mjs', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
   push:
     branches: [main]
-    paths: ['index.html', 'assets/**', 'dispatcher/**', 'legal/**', 'tests/dispatcher.test.mjs', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
+    paths: ['index.html', 'assets/**', 'driver/**', 'workspaces/**', 'dispatcher/**', 'legal/**', 'tests/dispatcher.test.mjs', 'tests/onboarding.test.mjs', 'tests/firebase-config.test.mjs', 'tools/**', 'package.json', '.github/workflows/onboarding-ui.yml', '.github/workflows/deploy-pages.yml']
 permissions:
   contents: read
 jobs:

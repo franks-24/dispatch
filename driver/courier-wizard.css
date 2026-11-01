@@ -11,3 +11,11 @@
 .courier-actions button:first-child { background: #f3f3f3; color: #222; }
 .f24-driver-apply :focus-visible { outline: 3px solid #a31725; outline-offset: 4px; }
 @media(max-width:600px) { .f24-driver-apply { padding-inline: 16px; } .courier-actions button { flex: 1; } .f24-driver-apply button[type=submit] { width: 100%; } }
+.courier-heading,.courier-save{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.courier-save{border-bottom:1px solid var(--line);padding-bottom:12px}.courier-save label{display:flex;gap:10px;align-items:center;font-size:14px}
+.courier-vehicles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.f24-driver-apply .courier-vehicle{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:16px;margin:0;cursor:pointer;min-width:0}
+.courier-vehicle:has(input:checked){background:#fff1f2;border-color:#c8202f;box-shadow:0 0 0 1px #c8202f}.courier-vehicle input{width:20px;min-height:20px;flex:0 0 20px;accent-color:#c8202f}.courier-vehicle strong,.courier-vehicle small{display:block}.courier-vehicle small{font-size:12px;font-weight:400;margin-top:4px}
+.courier-review{border-top:1px solid var(--line);margin-top:24px;padding-top:16px}.courier-review ol{padding-left:24px}.courier-review li{padding:10px;border-bottom:1px solid var(--line);font-size:14px}.courier-review li span{display:block;color:var(--muted);font-size:12px}
+.courier-wizard form{border:0;padding:0}.courier-progress{font-size:13px}.courier-wizard progress{width:100%;height:8px;accent-color:#c8202f}
+@media(max-width:420px){.courier-vehicles{grid-template-columns:minmax(0,1fr)}.courier-save button{width:100%}}

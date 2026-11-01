@@ -78,16 +78,6 @@ form.addEventListener("submit",async event=>{
  catch(error){if(version===epoch)note(error.message);}
  finally{if(version===epoch)button.disabled=false;}
 });
-$("readiness-form").addEventListener("submit",event=>{
- event.preventDefault();
- const f=new FormData($("readiness-form"));
- const pending=[["eligibility","identity and right-to-work evidence"],
-  ["licence","licence or permit applicability"],["vehicle","vehicle, insurance and safety evidence"],
-  ["agreement","reviewed terms and privacy requirements"]].filter(([key])=>!f.has(key)).map(([,label])=>label);
- $("readiness-status").textContent=pending.length?
-  "Readiness preview only. Still to prepare: "+pending.join("; ")+".":
-  "Readiness checklist complete. This is not verification or approval; applications remain subject to human review and the live service gate.";
-});
 window.addEventListener("pagehide",()=>{controller.abort();});
 async function start(){
  $("applicant-login").textContent="Access paused — staging only";

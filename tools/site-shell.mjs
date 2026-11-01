@@ -12,6 +12,6 @@ export function footer(base="./") {
 }
 export function headAssets(base="./") {
  return `<!-- f24-assets:start -->
-<meta name="theme-color" content="#182b22"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="${base}assets/site-shell.css"><script type="module" src="${base}assets/site-shell.js"></script>
+<meta name="theme-color" content="#c8202f"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link rel="stylesheet" href="${base}assets/site-shell.css"><script type="module" src="${base}assets/site-shell.js"></script>
 <!-- f24-assets:end -->`;
 }
