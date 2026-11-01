@@ -19,3 +19,9 @@ header.f24-header{flex-direction:row}.f24-plan-fields label,body.f24-app .fields
 body.f24-app button,body.f24-app .button,body.f24-app :is(button,.button).primary,body.f24-app .button-primary{background:#c8202f;border-color:#c8202f;color:#fff}
 body.f24-app :is(.f24-panel-nav,.tabs) :is([aria-selected=true],[aria-pressed=true]){background:#c8202f;color:#fff}
 body.f24-app .f24-brand,body.f24-app .f24-footer-brand{color:#c8202f}
+
+/* Consistent task surfaces for customer, courier and staff dashboards. */
+body.f24-app .f24-task-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:8px 0 24px}
+.f24-task-link{display:block;padding:20px;border:1px solid var(--line);border-radius:12px;background:#fff;text-decoration:none!important;min-height:120px}.f24-task-link:hover{border-color:#c8202f;background:var(--sage)}.f24-task-link strong{display:block;font-size:18px;margin:0 0 8px}.f24-task-link small{display:block;color:var(--muted);font-size:13px}
+body.f24-app .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}.tabs button{flex-shrink:0}.review-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.review-checks details{margin:0;padding:0 14px;border:1px solid var(--line);border-radius:8px}.review-checks fieldset{border:0;padding:0;min-width:0}.review-checks legend{font-weight:700;font-size:14px}.review-checks input,.review-checks select{max-width:100%}
+@media(max-width:720px){body.f24-app .f24-task-grid,.review-checks{grid-template-columns:minmax(0,1fr)}.f24-task-link{min-height:88px}}

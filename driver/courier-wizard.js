@@ -7,7 +7,9 @@ for (const form of document.querySelectorAll('[data-courier-wizard]')) {
   progress.className = 'courier-progress';
   progress.setAttribute('role', 'status');
   progress.setAttribute('aria-live', 'polite');
-  form.prepend(progress);
+  const meter = document.createElement('progress');
+  meter.max = steps.length; meter.setAttribute('aria-label', 'Onboarding step progress');
+  form.prepend(progress, meter);
   const actions = document.createElement('div');
   actions.className = 'courier-actions';
   const back = document.createElement('button');
@@ -18,6 +20,7 @@ for (const form of document.querySelectorAll('[data-courier-wizard]')) {
   function show(focus = false) {
     steps.forEach((step, index) => { step.hidden = index !== current; });
     progress.textContent = `Step ${current + 1} of ${steps.length}`;
+    meter.value = current + 1;
     back.hidden = current === 0;
     next.hidden = current === steps.length - 1;
     submit.hidden = current !== steps.length - 1;
