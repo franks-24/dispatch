@@ -18,6 +18,7 @@ function note(message){status.textContent=message;}
 function clearPrivate(){
  epoch++;controller.abort();controller=new AbortController();
  user=null;submissionKey=null;submissionDigest="";refresh.hidden=true;refresh.disabled=false;
+ for(const id of ["application-state","application-details","application-id"])$(id).textContent="";
  form.reset();form.hidden=true;panel.hidden=true;$("application-summary").hidden=true;
  $("applicant-account").textContent="";$("applicant-logout").hidden=true;
  $("applicant-login").hidden=!auth;
@@ -36,6 +37,11 @@ async function api(method,body){
  if(version!==epoch)throw Error("The signed-in account changed.");
  const result=(response.headers.get("Content-Type")||"").startsWith("application/json")?await response.json():null;
  if(version!==epoch)throw Error("The signed-in account changed.");
+ if(response.status===401||response.status===403){
+  clearPrivate();
+  note("Application access could not be verified. Sign in again to continue.");
+  throw Error("Application access could not be verified. Sign in again to continue.");
+ }
  if(!response.ok||!result)throw Error(result?.error||"Application service is not available.");
  return result;
 }
