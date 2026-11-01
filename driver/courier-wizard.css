@@ -1,0 +1,13 @@
+.f24-driver-apply { --accent: #c8202f; }
+.f24-driver-apply .hero h1 { max-width: 18ch; }
+.f24-driver-apply form { max-width: 680px; margin-inline: auto; }
+.f24-driver-apply [hidden] { display: none !important; }
+.f24-driver-apply fieldset { border: 0; padding: 0; margin: 20px 0; min-width: 0; }
+.f24-driver-apply legend { font-size: 1.5rem; font-weight: 700; margin-bottom: 18px; }
+.courier-progress { color: #a31725; font-weight: 700; border-top: 5px solid #c8202f; padding-top: 16px; }
+.courier-actions { display: flex; gap: 12px; margin-block: 24px; }
+.f24-driver-apply button[type=submit], .courier-actions button { background: #c8202f; color: white; border: 0; border-radius: 14px; min-height: 48px; padding: 12px 24px; cursor: pointer; }
+.f24-driver-apply button:disabled { opacity: .6; cursor: not-allowed; }
+.courier-actions button:first-child { background: #f3f3f3; color: #222; }
+.f24-driver-apply :focus-visible { outline: 3px solid #a31725; outline-offset: 4px; }
+@media(max-width:600px) { .f24-driver-apply { padding-inline: 16px; } .courier-actions button { flex: 1; } .f24-driver-apply button[type=submit] { width: 100%; } }
