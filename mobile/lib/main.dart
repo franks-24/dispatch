@@ -1,26 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'pilot.dart';
+import 'franks24_theme.dart';
 void main() => runApp(const PilotApp());
 class PilotApp extends StatelessWidget {
   const PilotApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Franks24 · Dispatch pilot',
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xffc8102e),
-        primary: const Color(0xffc8102e), onPrimary: Colors.white,
-        surface: Colors.white),
-      scaffoldBackgroundColor: const Color(0xfff7f7f8),
-      appBarTheme: const AppBarTheme(backgroundColor: Color(0xffc8102e),
-        foregroundColor: Colors.white, surfaceTintColor: Colors.transparent,
-        centerTitle: false, toolbarHeight: 80),
-      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white, indicatorColor: const Color(0xffffe5e9)),
-      useMaterial3: true),
+    theme: Franks24Theme.light,
     home: const PilotHome());
 }
 class PilotHome extends StatefulWidget {
