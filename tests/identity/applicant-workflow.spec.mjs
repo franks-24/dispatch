@@ -37,9 +37,10 @@ test("staged applicant can apply once, acknowledge approved policies, track stat
  export async function signInWithPopup(){await callback(user);}
  export async function signOut(){await callback(null);}
  `}));
- let application=null,submitted=null,posts=0;
+ let application=null,submitted=null,posts=0,reads=0;
  await page.route("**/api/driver/application",route=>{
   const req=route.request();
+  if(req.method()==="GET"&&++reads===1)return route.fulfill({status:503,contentType:"application/json",body:JSON.stringify({error:"Temporary application outage"})});
   if(req.method()==="POST"){
    posts++;submitted=req.postDataJSON();
    if(!req.headers().authorization?.startsWith("Bearer verified-token"))
@@ -50,6 +51,8 @@ test("staged applicant can apply once, acknowledge approved policies, track stat
  });
  await page.goto("/driver/apply.html");
  await page.getByRole("button",{name:"Continue with Google"}).click();
+ await expect(page.locator("#applicant-status")).toHaveText("Temporary application outage");
+ await page.getByRole("button",{name:"Refresh application status"}).click();
  await expect(page.locator("#apply-form")).toBeVisible();
  await page.getByLabel("Legal name").fill("Driver Example");
  await page.getByLabel("Service area").fill("Johannesburg");
@@ -65,7 +68,13 @@ test("staged applicant can apply once, acknowledge approved policies, track stat
  await expect(page.locator("#application-state")).toHaveText("in_review");
  expect(posts).toBe(1);
  expect(submitted).toMatchObject({name:"Driver Example",vehicle:"bakkie",policyVersion:"driver-policy-1",termsAccepted:true,privacyAcknowledged:true,dataUseAcknowledged:true});
+ application.status="approved";
+ await page.getByRole("button",{name:"Refresh application status"}).click();
+ await expect(page.locator("#application-state")).toHaveText("approved");
+ expect(posts).toBe(1);
  await page.getByRole("button",{name:"Sign out"}).click();
+ await expect(page.getByRole("button",{name:"Refresh application status"})).toBeHidden();
+ for(const id of ["application-state","application-details","application-id"])await expect(page.locator("#"+id)).toHaveText("");
  await expect(page.locator("#application-panel")).toBeHidden();
  await expect(page.locator("#applicant-account")).toHaveText("");
 });
