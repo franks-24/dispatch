@@ -37,7 +37,12 @@ test("public driver, operations and application remain visibly closed while appl
  await page.goto("/driver/apply.html");
  await expect(page.locator("#applicant-login")).toBeDisabled();
  await expect(page.locator("#applicant-login")).toHaveText("Access paused — staging only");
- await page.getByLabel("Vehicle you intend to use").selectOption("bakkie");
+ const readiness=page.locator("#readiness-form");
+ await readiness.getByRole("radio",{name:/Bakkie/}).check();
+ for(const step of ["Identity and eligibility","Licence, vehicle and insurance","Safety screening","Agreement and payout readiness"]){
+  await readiness.getByRole("button",{name:"Continue",exact:true}).click();
+  await expect(readiness.getByRole("group",{name:step,exact:true})).toBeVisible();
+ }
  await page.getByRole("button",{name:"Check readiness"}).click();
  await expect(page.locator("#readiness-status")).toContainText("Still to prepare");
  await expect(page.locator("#application-panel")).toBeHidden();
