@@ -4,10 +4,20 @@ import {applicantConfig} from "./apply-config.js";
 const $=id=>document.getElementById(id);
 const form=$("apply-form"),status=$("applicant-status"),panel=$("application-panel");
 let auth,sdk,user=null,epoch=0,controller=new AbortController(),submissionKey=null,submissionDigest="";
+const refresh=document.createElement("button");
+refresh.type="button";refresh.textContent="Refresh application status";refresh.hidden=true;
+status.after(refresh);
+refresh.addEventListener("click",async()=>{
+ if(!user)return;
+ const version=epoch;refresh.disabled=true;note("Checking your application status…");
+ try{const data=await api("GET");if(version===epoch)render(data);}
+ catch(error){if(version===epoch)note(error.message);}
+ finally{if(version===epoch)refresh.disabled=false;}
+});
 function note(message){status.textContent=message;}
 function clearPrivate(){
  epoch++;controller.abort();controller=new AbortController();
- user=null;submissionKey=null;submissionDigest="";
+ user=null;submissionKey=null;submissionDigest="";refresh.hidden=true;refresh.disabled=false;
  form.reset();form.hidden=true;panel.hidden=true;$("application-summary").hidden=true;
  $("applicant-account").textContent="";$("applicant-logout").hidden=true;
  $("applicant-login").hidden=!auth;
@@ -17,7 +27,7 @@ async function api(method,body){
  const identity=user,version=epoch,token=await identity.getIdToken();
  if(version!==epoch)throw Error("The signed-in account changed.");
  const payload=body?JSON.stringify(body):undefined;
- if(payload!==submissionDigest){submissionDigest=payload||"";submissionKey=crypto.randomUUID();}
+ if(payload&&payload!==submissionDigest){submissionDigest=payload||"";submissionKey=crypto.randomUUID();}
  const response=await fetch(new URL("/api/driver/application",location.origin),{
   method,headers:{Authorization:"Bearer "+token,Accept:"application/json",
    ...(payload?{"Content-Type":"application/json","Idempotency-Key":submissionKey}:{})},
@@ -44,6 +54,7 @@ function render(data){
 async function accountChanged(identity){
  const current=++epoch;controller.abort();controller=new AbortController();
  form.reset();submissionKey=null;submissionDigest="";user=identity;
+ refresh.hidden=!identity;refresh.disabled=false;
  form.hidden=true;panel.hidden=true;$("application-summary").hidden=true;
  $("applicant-logout").hidden=!identity;$("applicant-login").hidden=!!identity;
  $("applicant-account").textContent=identity?.email||"";
